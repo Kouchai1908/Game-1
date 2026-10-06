@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dua Kunci</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700;800&family=Figtree:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one vault-door column. Gauge strip on top, the puzzle plate in the middle, your own padlock at the bottom. Deliberately single dark look: we are inside a vault. */
+:root{
+  color-scheme:dark;
+  --bg:#121a1d; --plate:#1a2529; --plate-2:#223137; --line:#34474d;
+  --fg:#ece6d6; --muted:#9daba8;
+  --brass:#d4a84f; --brass-ink:#1b1407;
+  --red:#e2594c; --blue:#4f92e2; --yellow:#e9c24a; --green:#4fb57c; --white:#f2efe7; --black:#0a0e0f;
+  --ok:#5ec48c; --bad:#ec6a5d;
+  --f-display:"Saira Condensed","Arial Narrow",sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(circle at 50% -10%,#1d2b30 0,transparent 60%);}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;margin:0;text-wrap:balance;line-height:1.1}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
+.muted{color:var(--muted)}
+.note{color:var(--muted);font-size:14px}
+b{font-weight:700}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* buttons */
+.btn{appearance:none;border:0;border-radius:4px;background:var(--brass);color:var(--brass-ink);font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;padding:10px 18px;cursor:pointer;transition:transform .12s, filter .12s}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.small{font-size:15px;padding:7px 12px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center;padding-block:12px 4px}
+.hero h1{font-size:clamp(52px,12vw,88px);font-weight:800;line-height:.9;letter-spacing:-.01em;text-transform:uppercase}
+.hero h1 span{color:var(--brass)}
+.hero p{margin-top:10px;max-width:52ch;color:var(--muted)}
+.locks{display:flex;gap:6px}
+@media (max-width:520px){.hero{grid-template-columns:1fr}.locks{order:-1}}
+
+/* plates */
+.plate{position:relative;background:var(--plate);border:1px solid var(--line);border-radius:6px;padding:22px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.plate::before,.plate::after{content:"";position:absolute;top:9px;width:6px;height:6px;border-radius:50%;background:var(--line)}
+.plate::before{left:9px}.plate::after{right:9px}
+.plate h2{font-size:30px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.legend{font-weight:700;font-size:14px}
+.inrow{display:flex;gap:8px;flex-wrap:wrap}
+.code-in{font-family:var(--f-mono);font-size:26px;letter-spacing:.3em;width:7.5em;max-width:100%;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 12px;text-align:center}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.choice{position:relative;display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:5px;padding:12px;cursor:pointer;background:var(--plate-2)}
+.choice input{position:absolute;opacity:0;pointer-events:none}
+.choice:has(input:checked){border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.choice:has(input:focus-visible){outline:2px solid var(--brass);outline-offset:2px}
+.choice small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
+.dot{width:16px;height:16px;border-radius:50%;flex:none}
+
+/* "what you can do" */
+.vaults{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.vault{border-top:3px solid var(--brass);background:var(--plate-2);padding:14px;border-radius:0 0 5px 5px;display:flex;flex-direction:column;gap:6px}
+.vault h3{font-size:21px}
+.vault p{font-size:14px;color:var(--muted)}
+.vault .split{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:13.5px;color:var(--fg)}
+.vault .split span:nth-child(odd){font-family:var(--f-mono);font-size:11px;color:var(--brass);padding-top:2px}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 22px;margin:0;padding:0;list-style:none}
+.feat li{padding-left:18px;position:relative;font-size:14.5px}
+.feat li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;background:var(--brass);transform:rotate(45deg)}
+
+/* game header */
+.bar{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between}
+.brand{font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:.02em}
+.brand span{color:var(--brass)}
+.gauges{display:flex;gap:8px;flex-wrap:wrap}
+.g{background:var(--plate);border:1px solid var(--line);border-radius:4px;padding:4px 10px;display:flex;flex-direction:column;min-width:64px}
+.g span{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.g b{font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums}
+.progress{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.progress i{height:6px;border-radius:2px;background:var(--line)}
+.progress i.done{background:var(--brass)}
+.progress i.now{background:var(--fg)}
+.role{display:flex;gap:12px;align-items:flex-start;border-left:4px solid var(--key);background:var(--plate-2);padding:10px 14px;border-radius:0 4px 4px 0}
+.role b.k{color:var(--key)}
+.k-merah{--key:var(--red)} .k-biru{--key:var(--blue)}
+
+/* puzzle bits */
+.seq{display:flex;flex-wrap:wrap;gap:10px}
+.sym{width:72px;height:72px;display:grid;place-items:center;background:var(--plate-2);border:1px solid var(--line);border-radius:5px}
+.table{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.trow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;background:var(--plate-2);border-radius:4px;padding:6px 10px;font-size:14.5px}
+.trow b{font-family:var(--f-mono);font-size:20px;color:var(--brass)}
+.rule-note{border:1px dashed var(--brass);border-radius:4px;padding:10px 12px;font-size:14.5px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.rules div{background:var(--plate-2);border-radius:4px;padding:12px 14px}
+.rules h4{font-size:19px;color:var(--brass)}
+.rules ol{margin:6px 0 0;padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.serial{display:inline-flex;gap:10px;align-items:center;font-family:var(--f-mono);background:var(--white);color:var(--black);padding:6px 12px;border-radius:3px;font-weight:700;letter-spacing:.08em;align-self:flex-start}
+.svgbox{overflow-x:auto}
+.kgrid{display:grid;grid-template-columns:22px repeat(5,minmax(0,1fr));gap:4px;max-width:400px}
+.kgrid .lab{font-family:var(--f-mono);font-size:13px;color:var(--muted);display:grid;place-items:center}
+.kc{aspect-ratio:1;max-width:100%;background:var(--plate-2);border-radius:4px;display:grid;place-items:center}
+.kc svg{width:62%;height:62%}
+.target{display:flex;gap:14px;align-items:center;background:var(--plate-2);padding:12px 14px;border-radius:4px}
+.words{display:flex;flex-wrap:wrap;gap:10px}
+.word{font-family:var(--f-display);font-weight:700;font-size:34px;letter-spacing:.04em;background:var(--plate-2);border:1px solid var(--line);border-radius:5px;padding:4px 18px;text-transform:uppercase}
+.word small{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-right:8px;vertical-align:middle}
+.dict{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.dict div{display:flex;justify-content:space-between;gap:8px;background:var(--plate-2);border-radius:4px;padding:6px 10px;font-size:15px}
+.dict i{font-style:normal;font-family:var(--f-mono);color:var(--brass)}
+.maze{display:block;max-width:100%;height:auto}
+.maze text{font-family:var(--f-mono);font-size:13px;fill:var(--muted)}
+
+/* lock */
+.lock{background:var(--plate);border:1px solid var(--line);border-top:4px solid var(--key);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.lock-head{display:flex;gap:16px;align-items:center}
+.lock-head h3{font-size:26px}
+.ans{display:flex;gap:8px;flex-wrap:wrap}
+.ans input{flex:1 1 180px;min-width:0;font-family:var(--f-mono);font-size:24px;letter-spacing:.18em;text-transform:uppercase;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 12px}
+.ans input:disabled{opacity:.6}
+.fb{min-height:1.5em;font-weight:500}
+.fb.ok{color:var(--ok)} .fb.bad{color:var(--bad)}
+.hint{background:var(--plate-2);border-left:3px solid var(--brass);padding:10px 12px;font-size:14.5px;border-radius:0 4px 4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seqbox{min-height:48px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 10px;font-family:var(--f-mono);font-size:20px}
+.seqbox span{background:var(--plate-2);border-radius:3px;padding:0 8px}
+.seqbox em{font-family:var(--f-body);font-style:normal;font-size:14px;color:var(--muted)}
+.pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pad button{appearance:none;border:1px solid var(--line);background:var(--plate-2);border-radius:4px;padding:10px 4px;cursor:pointer;font-weight:700}
+.pad button:hover{border-color:var(--brass)}
+.pad button:disabled{opacity:.4;cursor:not-allowed}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+.padlock .shackle{fill:none;stroke:var(--c);stroke-width:7;stroke-linecap:round;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.padlock .body{fill:var(--c)}
+.padlock .hole{fill:var(--bg)}
+.padlock.open .shackle{transform:translate(0,-9px)}
+
+.curtain{display:flex;flex-direction:column;gap:14px;align-items:flex-start;padding-block:28px}
+.tools{background:var(--plate);border:1px solid var(--line);border-radius:6px;padding:12px 16px}
+.tools summary{cursor:pointer;font-weight:700}
+.tools .inner{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 10px}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:var(--plate-2);border-radius:4px;padding:12px}
+.stat span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat b{display:block;font-family:var(--f-mono);font-size:26px;font-variant-numeric:tabular-nums}
+.rank{font-family:var(--f-display);font-size:44px;font-weight:800;color:var(--brass);text-transform:uppercase;line-height:1}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.topline{display:flex;justify-content:flex-end}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--plate)}
+.lang button{appearance:none;border:0;background:transparent;padding:6px 12px;cursor:pointer;font-family:var(--f-mono);font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink)}
+.lang span{align-self:center;padding:0 10px;font-size:12px;color:var(--muted);border-right:1px solid var(--line)}
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+  <div class="topline"><div class="lang" role="group" aria-label="Language / Bahasa"><span id="langLbl">Language</span><button type="button" data-lang="en">EN</button><button type="button" data-lang="id">ID</button></div></div>
+  <main id="setup" class="wrap" style="padding:0"></main>
+  <main id="game" class="wrap" style="padding:0" hidden>
+    <header class="bar">
+      <div class="brand">DUA <span>KUNCI</span></div>
+      <div class="gauges">
+        <div class="g"><span id="lRoom"></span><b id="gRoom">0000</b></div>
+        <div class="g"><span id="lLevel"></span><b id="gLevel">1/10</b></div>
+        <div class="g"><span id="lTime"></span><b id="gTime">00:00</b></div>
+        <div class="g"><span id="lMiss"></span><b id="gMiss">0</b></div>
+      </div>
+    </header>
+    <div class="progress" id="progress" aria-hidden="true"></div>
+    <section class="plate" id="plate"></section>
+    <section class="lock" id="lock"></section>
+    <details class="tools" id="tools">
+      <summary id="lTools"></summary>
+      <div class="inner">
+        <div class="row"><label for="lvlSel" id="lGoto"></label><select id="lvlSel"></select></div>
+        <p class="note" id="lGotoNote"></p>
+        <div class="row">
+          <button type="button" class="btn ghost small" id="swapRole"></button>
+          <button type="button" class="btn ghost small" id="quit"></button>
+        </div>
+      </div>
+    </details>
+  </main>
+  <main id="end" class="wrap" style="padding:0" hidden><section class="plate" id="endPlate"></section></main>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const LEVELS=10, SAVE_KEY='duakunci-v1', LANG_KEY='duakunci-lang';
+const COLS='ABCDE';
+let LANG='en';
+try{const l=localStorage.getItem(LANG_KEY);if(l==='en'||l==='id')LANG=l}catch(e){}
+
+/* ---------- strings ---------- */
+const T={
+en:{
+  langLbl:'Language',
+  eyebrow:'Co-op game · 2 players · 10 vaults',
+  tagline:'Two Keys',
+  heroP:'Every vault has two padlocks. You only see half of the clues and your partner sees the other half. Talk to each other to open both locks.',
+  saved:'Saved game', room:'Room', vault:'Vault', of:'of', resume:'Continue',
+  twoDev:'Two devices', oneDev:'One device',
+  setupH:'Set up a room', codeL:'Room code', roll:'Random code',
+  codeNote:'Both players enter the same code. The same code always creates the same puzzles, so the two phones never need to connect to each other.',
+  yourKey:'Your key', red:'Red Key', blue:'Blue Key', redSub:'First player', blueSub:'Second player. Pick the key your partner did not pick.',
+  howL:'How you play', twoSub:'Recommended. Each player opens the game on their own phone and you talk.', oneSub:'Take turns looking at the screen. No peeking when it is not your turn.',
+  enter:'Enter the vault',
+  langNote:'Both players can use different languages. The answers are the same.',
+  whatEy:'Inside the game', whatH:'What you can do',
+  whatP:'In every vault one player is the <b>Watcher</b> (sees the object) and the other is the <b>Guide</b> (holds the rules). Roles swap every vault. There are five kinds of vault, each appears twice: an easy version, then a hard version with an extra rule.',
+  see:'SEE', guide:'GUIDE',
+  vaults:[
+    ['Symbol Cipher','Turn a row of symbols into a number code.','A row of 4–5 symbols','Symbol-to-number table'],
+    ['Cut the Wire','Find the one wire that is safe to cut.','Colored wires and a serial number','Wire rulebook'],
+    ['Secret Coordinates','Find the code square on a 5×5 grid.','Grid of colored symbols','The target and its direction'],
+    ['Tetum Dictionary','Translate Tetum words to build a letter code.','Tetum words','Tetum–English dictionary'],
+    ['Dark Maze','Guide each step out of the maze.','Start point and exit','Map of the walls']],
+  feats:[
+    ['Room code:','play on two phones with no account and no server.'],
+    ['Two padlocks:','both players type the answer on their own device.'],
+    ['Hints:','available in every vault, costs 30 seconds.'],
+    ['Wrong guesses:','add 15 seconds to the final score.'],
+    ['Final rank:','from Vault Master down to Still Warming Up.'],
+    ['Saved progress:','continue later, jump to a vault, or swap keys.']],
+  gRoom:'Room', gLevel:'Vault', gTime:'Time', gMiss:'Mistakes',
+  tools:'Room settings', goto:'Go to vault', gotoNote:'Use this if you and your partner are on different vaults.', swap:'Swap key', quit:'Back to menu',
+  vaultN:n=>'Vault '+n, easy:'Easy', hard:'Hard',
+  watcher:'You are the <b>Watcher</b>. You can see the object but you do not have the rules. Describe what you see.',
+  guideR:'You are the <b>Guide</b>. You have the rules but you cannot see the object. Ask your partner questions.',
+  turn:k=>'Your turn, '+k, handTxt:k=>`Hand this device to the <b>${k}</b> player. The other player should not look at the screen.`, reveal:k=>`I am ${k}, show me`, handover:k=>'Hand over to '+k,
+  yourLock:k=>'Your '+k+' padlock', sharedLock:'Vault padlock', open:'Open', locked:'Locked',
+  instrSolved2:'Your padlock is open. Make sure your partner opened theirs too, then move on together.', instrSolved1:'Both padlocks are open.',
+  instr2:'When you find the code, both of you must type it on your own device.', instr1:'Type the code you found together.',
+  unlock:'Unlock', answerAria:'Answer code',
+  noMoves:'No steps yet. Use the arrow buttons or your keyboard arrows.',
+  up:'Up', down:'Down', left:'Left', right:'Right', undo:'Undo 1', reset:'Reset',
+  hintBtn:'Get a hint (+30 s)', hintL:'Hint:', nextBtn:n=>'Next: vault '+n, results:'See results',
+  ok2:'Click! Your padlock is open.', ok1:'Click! The vault is open.', wrong:'The padlock did not move. Check again with your partner.',
+  wall:(i,a)=>`Step ${i} (${a}) hits a wall.`, short:'The path is safe, but it stops before the exit.',
+  endEy:c=>`Room ${c} · 10 vaults open`,
+  ranks:[['Vault Master','You talk like one brain.'],['Solid Team','Your communication is smooth. Try another room code to reach Vault Master.'],['Still Warming Up','Every vault is open. Play again with a new code to beat your time.']],
+  sPlay:'Play time', sMiss:'Wrong guesses', sHint:'Hints', sScore:'Score time',
+  rankNote:'Rank: under 8 minutes is Vault Master, under 15 minutes is Solid Team. Compare your score time with your partner. It can differ a little because each device keeps its own clock.',
+  again:'Play again with a new code',
+  /* puzzles */
+  shapes:['Circle','Square','Triangle','Diamond','Star','Plus','Crescent moon','Heart','Hexagon','Lightning'],
+  gcol:['red','blue','yellow','green'],
+  wcol:{merah:'red',biru:'blue',kuning:'yellow',putih:'white',hitam:'black'},
+  shapeColor:(s,c)=>c+' '+s.toLowerCase(),
+  p1t:'Symbol Cipher',
+  p1v:'Read these symbols to your partner, from left to right.',
+  p1b:'Your partner sees a row of symbols. Match each symbol to its number.',
+  p1rule:'<b>Extra rule for this vault:</b> type the code backwards, from the rightmost symbol to the leftmost.',
+  p1ph:n=>n+' digits',
+  p1h:'The Watcher names the symbols one by one, for example "star, lightning, heart". The Guide reads out the numbers.', p1h2:' Remember: the code is reversed.',
+  p2t:'Cut the Wire',
+  p2v:'Describe these wires: how many there are, the color of each wire from the top, and the serial number.',
+  serial:'SERIAL NO.',
+  p2b:'Ask how many wires there are first, then follow the <b>first rule that matches</b>. Wire 1 is the top wire. Possible colors: red, blue, yellow, white, black.',
+  wires:n=>n+' wires',
+  r3:['No red wire: cut wire 2.','Last wire is white: cut the last wire.','More than one blue wire: cut the last blue wire.','Otherwise: cut the last wire.'],
+  r4:['More than one red wire <b>and</b> the last digit of the serial number is odd: cut the last red wire.','Last wire is yellow <b>and</b> there is no red wire: cut wire 1.','Exactly one blue wire: cut wire 1.','More than one yellow wire: cut wire 4.','Otherwise: cut wire 2.'],
+  r5:['Last wire is black <b>and</b> the last digit of the serial number is odd: cut wire 4.','Exactly one red wire <b>and</b> more than one yellow wire: cut wire 1.','No black wire: cut wire 2.','Otherwise: cut wire 1.'],
+  p2ph:'Wire number',
+  p2h:'Guide: check the rules from top to bottom and stop at the first one that is true. The serial number only matters for rules that mention "odd".',
+  p3t:'Secret Coordinates',
+  p3v:'Your partner knows which symbol to look for. Help them find it on this grid. Coordinates are the column letter then the row number, for example C4.',
+  p3b:n=>`Ask your partner to find ${n>1?'these symbols, in order,':'this symbol'} on their grid. The code is the coordinate of the square next to it.`,
+  target:'Target',
+  dirs:['directly ABOVE','directly BELOW','directly LEFT of','directly RIGHT of'],
+  p3cell:d=>`The code square is <b>${d}</b> this symbol.`,
+  p3two:'Type both coordinates in order with no space, for example B2D4.',
+  p3ph:n=>n>1?'e.g. B2D4':'e.g. C4',
+  p3h:'The Guide names the target shape and color. The Watcher finds it on the grid, moves one square in the given direction and reads out the coordinate.',
+  p4t:'Tetum Dictionary',
+  p4v:'These are words in Tetum, the language of Timor-Leste. Spell or say them to your partner, in order.',
+  p4b:'Look up the meaning of each word your partner says in this dictionary.',
+  p4rule:d=>`<b>Code rule:</b> take the ${d===1?'<b>FIRST</b>':'<b>LAST</b>'} letter of the English meaning of each word, in your partner's order.`,
+  p4ph:n=>n+' letters',
+  p4h:'Spell the Tetum words letter by letter so nothing is misheard. The answer is letters, not numbers.',
+  p5t:'Dark Maze',
+  p5v:'You know the <b>START</b> point and the <b>exit</b> (green star), but you cannot see the walls. Tell your partner the coordinates.',
+  p5b:'You hold the map of the walls, but you do not know where the start and exit are. Ask your partner for the coordinates, then find the path.',
+  start:'START', mazeWalls:'Maze wall map', mazePos:'Start and exit positions',
+  p5h:'The Watcher reads out the START and EXIT coordinates. The Guide traces the path, then reads out each step (up, down, left, right).'
+},
+id:{
+  langLbl:'Bahasa',
+  eyebrow:'Game kooperatif · 2 pemain · 10 brankas',
+  tagline:'Dua Kunci',
+  heroP:'Setiap brankas punya dua gembok. Kamu hanya melihat separuh petunjuk, partnermu melihat separuh lainnya. Kalian harus bicara supaya kedua gembok terbuka.',
+  saved:'Permainan tersimpan', room:'Ruang', vault:'Brankas', of:'dari', resume:'Lanjutkan',
+  twoDev:'Dua perangkat', oneDev:'Satu perangkat',
+  setupH:'Siapkan ruang', codeL:'Kode ruang', roll:'Acak kode',
+  codeNote:'Kedua pemain memasukkan kode yang sama. Kode yang sama selalu menghasilkan teka-teki yang sama, jadi dua HP tidak perlu terhubung satu sama lain.',
+  yourKey:'Kunci kamu', red:'Kunci Merah', blue:'Kunci Biru', redSub:'Pemain pertama', blueSub:'Pemain kedua. Pilih kunci yang tidak dipilih partner.',
+  howL:'Cara main', twoSub:'Disarankan. Masing-masing buka game ini di HP sendiri dan saling bicara.', oneSub:'Bergantian melihat layar. Yang tidak giliran dilarang mengintip.',
+  enter:'Masuk ke brankas',
+  langNote:'Kedua pemain boleh memakai bahasa yang berbeda. Jawabannya tetap sama.',
+  whatEy:'Isi game', whatH:'Apa saja yang bisa dilakukan',
+  whatP:'Di setiap brankas, satu pemain menjadi <b>Pengamat</b> (melihat bendanya) dan satu lagi menjadi <b>Pemegang Panduan</b> (memegang aturannya). Peran bertukar setiap brankas. Ada lima jenis brankas, masing-masing muncul dua kali: versi mudah lalu versi sulit dengan aturan tambahan.',
+  see:'LIHAT', guide:'PANDU',
+  vaults:[
+    ['Sandi Simbol','Ubah deretan simbol menjadi kode angka.','Deretan 4–5 simbol','Tabel simbol ke angka'],
+    ['Potong Kabel','Tentukan satu kabel yang aman dipotong.','Kabel berwarna dan nomor seri','Buku aturan kabel'],
+    ['Koordinat Rahasia','Temukan kotak kode di grid 5×5.','Grid simbol berwarna','Target dan arahnya'],
+    ['Kamus Tetum','Terjemahkan kata Tetum untuk menyusun kode huruf.','Kata-kata Tetum','Kamus Tetum–Indonesia'],
+    ['Labirin Gelap','Pandu langkah demi langkah keluar dari labirin.','Titik mulai dan keluar','Peta dinding']],
+  feats:[
+    ['Kode ruang:','main di dua HP tanpa akun dan tanpa server.'],
+    ['Dua gembok:','kedua pemain mengetik jawaban di perangkat masing-masing.'],
+    ['Petunjuk:','tersedia di setiap brankas, tambah 30 detik.'],
+    ['Salah tebak:','tambah 15 detik ke skor akhir.'],
+    ['Peringkat akhir:','dari Ahli Brankas sampai Masih Pemanasan.'],
+    ['Progres tersimpan:','bisa lanjut nanti, pindah brankas, atau tukar kunci.']],
+  gRoom:'Ruang', gLevel:'Brankas', gTime:'Waktu', gMiss:'Salah',
+  tools:'Pengaturan ruang', goto:'Pindah ke brankas', gotoNote:'Gunakan ini kalau kamu dan partner ada di brankas yang berbeda.', swap:'Tukar kunci', quit:'Keluar ke menu',
+  vaultN:n=>'Brankas '+n, easy:'Mudah', hard:'Sulit',
+  watcher:'Kamu <b>Pengamat</b>. Kamu melihat bendanya tapi tidak punya aturannya. Jelaskan apa yang kamu lihat.',
+  guideR:'Kamu <b>Pemegang Panduan</b>. Kamu punya aturannya tapi tidak melihat bendanya. Ajukan pertanyaan ke partnermu.',
+  turn:k=>'Giliran '+k, handTxt:k=>`Berikan perangkat ini ke pemegang <b>${k}</b>. Pemain lain jangan mengintip layar.`, reveal:k=>`Saya ${k}, tampilkan`, handover:k=>'Serahkan ke '+k,
+  yourLock:k=>'Gembok '+k+' milikmu', sharedLock:'Gembok brankas', open:'Terbuka', locked:'Terkunci',
+  instrSolved2:'Gembokmu terbuka. Pastikan gembok partnermu juga terbuka, lalu lanjut bersama.', instrSolved1:'Kedua gembok terbuka.',
+  instr2:'Setelah kalian menemukan kodenya, kalian berdua harus mengetiknya di perangkat masing-masing.', instr1:'Ketik kode yang kalian temukan bersama.',
+  unlock:'Buka gembok', answerAria:'Kode jawaban',
+  noMoves:'Belum ada langkah. Pakai tombol arah atau panah keyboard.',
+  up:'Atas', down:'Bawah', left:'Kiri', right:'Kanan', undo:'Hapus 1', reset:'Ulang',
+  hintBtn:'Minta petunjuk (+30 dtk)', hintL:'Petunjuk:', nextBtn:n=>'Lanjut ke brankas '+n, results:'Lihat hasil',
+  ok2:'Klik! Gembokmu terbuka.', ok1:'Klik! Brankas terbuka.', wrong:'Gembok tidak bergerak. Cocokkan lagi dengan partnermu.',
+  wall:(i,a)=>`Langkah ke-${i} (${a}) menabrak dinding.`, short:'Jalurnya aman, tapi berhenti sebelum pintu keluar.',
+  endEy:c=>`Ruang ${c} · 10 brankas terbuka`,
+  ranks:[['Ahli Brankas','Kalian bicara seperti satu otak.'],['Tim Solid','Komunikasi kalian lancar. Coba kode ruang lain untuk mengejar Ahli Brankas.'],['Masih Pemanasan','Semua brankas terbuka. Main lagi dengan kode baru untuk memperbaiki waktu.']],
+  sPlay:'Waktu main', sMiss:'Salah tebak', sHint:'Petunjuk', sScore:'Skor waktu',
+  rankNote:'Peringkat: di bawah 8 menit Ahli Brankas, di bawah 15 menit Tim Solid. Bandingkan skor waktu dengan partner, hasilnya bisa sedikit berbeda karena dihitung di tiap perangkat.',
+  again:'Main lagi dengan kode baru',
+  shapes:['Lingkaran','Kotak','Segitiga','Belah ketupat','Bintang','Tanda tambah','Bulan sabit','Hati','Segi enam','Petir'],
+  gcol:['merah','biru','kuning','hijau'],
+  wcol:{merah:'merah',biru:'biru',kuning:'kuning',putih:'putih',hitam:'hitam'},
+  shapeColor:(s,c)=>s+' '+c,
+  p1t:'Sandi Simbol',
+  p1v:'Sebutkan simbol-simbol ini ke partnermu, dari kiri ke kanan.',
+  p1b:'Partnermu melihat deretan simbol. Cocokkan tiap simbol dengan angkanya.',
+  p1rule:'<b>Aturan tambahan brankas ini:</b> ketik kodenya terbalik, dari simbol paling kanan ke paling kiri.',
+  p1ph:n=>n+' angka',
+  p1h:'Pengamat menyebut nama simbol satu per satu, misalnya "bintang, petir, hati". Pemegang panduan membacakan angkanya.', p1h2:' Jangan lupa: kodenya dibalik.',
+  p2t:'Potong Kabel',
+  p2v:'Jelaskan kabel-kabel ini: berapa jumlahnya, warna tiap kabel dari atas, dan nomor serinya.',
+  serial:'NO. SERI',
+  p2b:'Tanyakan jumlah kabel dulu, lalu ikuti <b>aturan pertama yang cocok</b>. Kabel 1 adalah kabel paling atas. Warna yang mungkin: merah, biru, kuning, putih, hitam.',
+  wires:n=>n+' kabel',
+  r3:['Tidak ada kabel merah: potong kabel 2.','Kabel terakhir putih: potong kabel terakhir.','Lebih dari satu kabel biru: potong kabel biru yang terakhir.','Selain itu: potong kabel terakhir.'],
+  r4:['Lebih dari satu kabel merah <b>dan</b> digit terakhir nomor seri ganjil: potong kabel merah yang terakhir.','Kabel terakhir kuning <b>dan</b> tidak ada kabel merah: potong kabel 1.','Tepat satu kabel biru: potong kabel 1.','Lebih dari satu kabel kuning: potong kabel 4.','Selain itu: potong kabel 2.'],
+  r5:['Kabel terakhir hitam <b>dan</b> digit terakhir nomor seri ganjil: potong kabel 4.','Tepat satu kabel merah <b>dan</b> lebih dari satu kabel kuning: potong kabel 1.','Tidak ada kabel hitam: potong kabel 2.','Selain itu: potong kabel 1.'],
+  p2ph:'Nomor kabel',
+  p2h:'Pemegang panduan: periksa aturan dari atas ke bawah dan berhenti di aturan pertama yang benar. Nomor seri hanya penting untuk aturan yang menyebut "ganjil".',
+  p3t:'Koordinat Rahasia',
+  p3v:'Partnermu tahu simbol mana yang dicari. Bantu dia menemukannya di grid ini. Koordinat ditulis huruf kolom lalu angka baris, misalnya C4.',
+  p3b:n=>`Minta partnermu mencari simbol ${n>1?'ini, sesuai urutan,':'ini'} di grid miliknya. Kodenya adalah koordinat kotak di sebelah simbol tersebut.`,
+  target:'Target',
+  dirs:['tepat di ATAS','tepat di BAWAH','tepat di KIRI','tepat di KANAN'],
+  p3cell:d=>`Kotak kodenya ada <b>${d}</b> simbol ini.`,
+  p3two:'Ketik kedua koordinat berurutan tanpa spasi, misalnya B2D4.',
+  p3ph:n=>n>1?'Mis. B2D4':'Mis. C4',
+  p3h:'Pemegang panduan menyebut bentuk dan warna target. Pengamat mencarinya di grid, lalu geser satu kotak sesuai arah dan sebutkan koordinatnya.',
+  p4t:'Kamus Tetum',
+  p4v:'Ini kata-kata dalam Bahasa Tetum. Eja atau ucapkan ke partnermu, sesuai urutan.',
+  p4b:'Cari arti kata yang disebut partnermu di kamus ini.',
+  p4rule:d=>`<b>Aturan kode:</b> ambil huruf ${d===1?'<b>PERTAMA</b>':'<b>TERAKHIR</b>'} dari arti Bahasa Indonesia tiap kata, sesuai urutan kata partnermu.`,
+  p4ph:n=>n+' huruf',
+  p4h:'Eja kata Tetum huruf demi huruf supaya tidak salah dengar. Jawabannya berupa huruf, bukan angka.',
+  p5t:'Labirin Gelap',
+  p5v:'Kamu tahu titik <b>MULAI</b> dan <b>pintu keluar</b> (bintang hijau), tapi tidak bisa melihat dindingnya. Beri tahu partnermu koordinatnya.',
+  p5b:'Kamu memegang peta dindingnya, tapi tidak tahu di mana titik mulai dan pintu keluar. Tanyakan koordinatnya ke partner, lalu cari jalannya.',
+  start:'MULAI', mazeWalls:'Peta dinding labirin', mazePos:'Posisi mulai dan keluar',
+  p5h:'Pengamat menyebut koordinat MULAI dan KELUAR. Pemegang peta menelusuri jalannya, lalu membacakan arah langkah demi langkah (atas, bawah, kiri, kanan).'
+}};
+const t=k=>T[LANG][k];
+
+/* ---------- deterministic random ---------- */
+function seedOf(str){let h=2166136261>>>0;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296}}
+const ri=(r,n)=>Math.floor(r()*n);
+const pick=(r,a)=>a[ri(r,a.length)];
+function shuffle(r,a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=ri(r,i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ---------- graphics ---------- */
+const SHAPES=[
+ {id:0,svg:'<circle cx="12" cy="12" r="8.5"/>'},
+ {id:1,svg:'<rect x="4" y="4" width="16" height="16" rx="1"/>'},
+ {id:2,svg:'<polygon points="12,3 21.5,20 2.5,20"/>'},
+ {id:3,svg:'<polygon points="12,2 21,12 12,22 3,12"/>'},
+ {id:4,svg:'<polygon points="12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6"/>'},
+ {id:5,svg:'<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>'},
+ {id:6,svg:'<path d="M15.5 3.2A9 9 0 1 0 20.8 16 7.2 7.2 0 0 1 15.5 3.2z"/>'},
+ {id:7,svg:'<path d="M12 21C6 16.5 3 13 3 9.2 3 6.3 5.2 4 8 4c1.7 0 3.1.8 4 2.1C12.9 4.8 14.3 4 16 4c2.8 0 5 2.3 5 5.2 0 3.8-3 7.3-9 11.8z"/>'},
+ {id:8,svg:'<polygon points="12,2.5 20.5,7.2 20.5,16.8 12,21.5 3.5,16.8 3.5,7.2"/>'},
+ {id:9,svg:'<polygon points="13.5,2 4.5,13.5 11,13.5 9.5,22 19.5,9.5 13,9.5"/>'}
+];
+const sName=sh=>t('shapes')[sh.id];
+function icon(sh,color,size){return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" role="img" aria-label="${sName(sh)}" style="fill:${color}">${sh.svg}</svg>`}
+function padlock(color,open,size=56){return `<svg class="padlock${open?' open':''}" viewBox="0 -10 64 82" width="${size}" height="${size*82/64}" aria-hidden="true" style="--c:${color}"><path class="shackle" d="M18 32V22a14 14 0 0 1 28 0v10"/><rect class="body" x="8" y="30" width="48" height="38" rx="6"/><circle class="hole" cx="32" cy="46" r="5"/><rect class="hole" x="29.5" y="48" width="5" height="11" rx="2"/></svg>`}
+const GCOL=[{i:0,css:'var(--red)'},{i:1,css:'var(--blue)'},{i:2,css:'var(--yellow)'},{i:3,css:'var(--green)'}];
+const WCOL={merah:'var(--red)',biru:'var(--blue)',kuning:'var(--yellow)',putih:'var(--white)',hitam:'var(--black)'};
+
+/* ---------- puzzle generators (random draws never depend on language) ---------- */
+function genSandi(r,d){
+  const digits=shuffle(r,[0,1,2,3,4,5,6,7,8,9]);
+  const map=SHAPES.map((s,i)=>({s,dg:digits[i]}));
+  const len=d===1?4:5;
+  const seq=[];for(let i=0;i<len;i++)seq.push(ri(r,10));
+  let ans=seq.map(i=>map[i].dg).join('');
+  if(d===2)ans=ans.split('').reverse().join('');
+  const rows=shuffle(r,map);
+  return {
+    title:t('p1t'),
+    view:`<p>${t('p1v')}</p><div class="seq">${seq.map(i=>`<div class="sym">${icon(SHAPES[i],'var(--brass)',44)}</div>`).join('')}</div>`,
+    book:`<p>${t('p1b')}</p><div class="table">${rows.map(m=>`<div class="trow">${icon(m.s,'var(--fg)',24)}<span>${sName(m.s)}</span><b>${m.dg}</b></div>`).join('')}</div>${d===2?`<p class="rule-note">${t('p1rule')}</p>`:''}`,
+    input:'text',inputmode:'numeric',placeholder:t('p1ph')(len),
+    check:v=>v===ans,
+    hint:t('p1h')+(d===2?t('p1h2'):''),
+    answer:ans
+  };
+}
+
+function genKabel(r,d){
+  const n=d===1?3+ri(r,2):4+ri(r,2);
+  const names=Object.keys(WCOL);
+  const w=[];for(let i=0;i<n;i++)w.push(pick(r,names));
+  const serial='TL-'+(1000+ri(r,9000));
+  const odd=(+serial.slice(-1))%2===1;
+  const cnt=c=>w.filter(x=>x===c).length;
+  const lastOf=c=>w.lastIndexOf(c)+1;
+  let ans;
+  if(n===3){
+    if(cnt('merah')===0)ans=2; else if(w[2]==='putih')ans=3; else if(cnt('biru')>1)ans=lastOf('biru'); else ans=3;
+  }else if(n===4){
+    if(cnt('merah')>1&&odd)ans=lastOf('merah'); else if(w[3]==='kuning'&&cnt('merah')===0)ans=1; else if(cnt('biru')===1)ans=1; else if(cnt('kuning')>1)ans=4; else ans=2;
+  }else{
+    if(w[4]==='hitam'&&odd)ans=4; else if(cnt('merah')===1&&cnt('kuning')>1)ans=1; else if(cnt('hitam')===0)ans=2; else ans=1;
+  }
+  const rowH=58, W=520, H=n*rowH+16;
+  let s=`<svg class="maze" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${t('wires')(n)}">`;
+  w.forEach((c,i)=>{
+    const y=20+i*rowH+rowH/2-10;
+    const d1=`M58 ${y} C 190 ${y-22}, 330 ${y+22}, 462 ${y}`;
+    s+=`<text x="14" y="${y+5}" style="fill:var(--fg);font-size:16px;font-weight:700">${i+1}</text>`;
+    s+=`<rect x="34" y="${y-12}" width="24" height="24" rx="3" style="fill:var(--line)"/><rect x="462" y="${y-12}" width="24" height="24" rx="3" style="fill:var(--line)"/>`;
+    s+=`<path d="${d1}" style="fill:none;stroke:var(--muted);stroke-width:15;stroke-linecap:round"/>`;
+    s+=`<path d="${d1}" style="fill:none;stroke:${WCOL[c]};stroke-width:11;stroke-linecap:round"/>`;
+  });
+  s+='</svg>';
+  const ol=a=>'<ol>'+a.map(x=>`<li>${x}</li>`).join('')+'</ol>';
+  return {
+    title:t('p2t'),
+    view:`<p>${t('p2v')}</p><div class="svgbox">${s}</div><span class="serial">${t('serial')} ${serial}</span>`,
+    book:`<p>${t('p2b')}</p><div class="rules"><div><h4>${t('wires')(3)}</h4>${ol(t('r3'))}</div><div><h4>${t('wires')(4)}</h4>${ol(t('r4'))}</div><div><h4>${t('wires')(5)}</h4>${ol(t('r5'))}</div></div>`,
+    input:'text',inputmode:'numeric',placeholder:t('p2ph'),
+    check:v=>v===String(ans),
+    hint:t('p2h'),
+    answer:String(ans)
+  };
+}
+
+const DIRS=[{i:0,dy:-1,dx:0},{i:1,dy:1,dx:0},{i:2,dy:0,dx:-1},{i:3,dy:0,dx:1}];
+function genKoord(r,d){
+  const sh=[0,1,2,3,4,7].map(i=>SHAPES[i]);
+  const need=d===1?1:2;
+  for(let tries=0;tries<100;tries++){
+    const g=[];for(let y=0;y<5;y++){const row=[];for(let x=0;x<5;x++)row.push({s:pick(r,sh),c:pick(r,GCOL)});g.push(row)}
+    const key=c=>c.s.id+'/'+c.c.i, count={};
+    g.flat().forEach(c=>count[key(c)]=(count[key(c)]||0)+1);
+    const cands=[];
+    for(let y=0;y<5;y++)for(let x=0;x<5;x++){
+      if(count[key(g[y][x])]!==1)continue;
+      DIRS.forEach(dir=>{const ny=y+dir.dy,nx=x+dir.dx;if(ny>=0&&ny<5&&nx>=0&&nx<5)cands.push({y,x,dir})});
+    }
+    const chosen=[];
+    for(const c of shuffle(r,cands)){if(chosen.length===need)break;if(chosen.some(o=>o.y===c.y&&o.x===c.x))continue;chosen.push(c)}
+    if(chosen.length<need)continue;
+    const ans=chosen.map(c=>COLS[c.x+c.dir.dx]+(c.y+c.dir.dy+1)).join('');
+    let grid='<div class="kgrid"><span></span>'+[...COLS].map(c=>`<span class="lab">${c}</span>`).join('');
+    g.forEach((row,y)=>{grid+=`<span class="lab">${y+1}</span>`+row.map(c=>`<div class="kc">${icon(c.s,c.c.css,28)}</div>`).join('')});
+    grid+='</div>';
+    return {
+      title:t('p3t'),
+      view:`<p>${t('p3v')}</p>${grid}`,
+      book:`<p>${t('p3b')(need)}</p>${chosen.map((c,i)=>{const cell=g[c.y][c.x];return `<div class="target">${icon(cell.s,cell.c.css,44)}<div>${need>1?`<span class="eyebrow">${t('target')} ${i+1}</span><br>`:''}<b>${t('shapeColor')(sName(cell.s),t('gcol')[cell.c.i])}</b><br>${t('p3cell')(t('dirs')[c.dir.i])}</div></div>`}).join('')}${need>1?`<p class="note">${t('p3two')}</p>`:''}`,
+      input:'text',inputmode:'text',placeholder:t('p3ph')(need),
+      check:v=>v===ans,
+      hint:t('p3h'),
+      answer:ans
+    };
+  }
+}
+
+/* Tetum word, Indonesian meaning, English meaning */
+const TETUM=[['uma','rumah','house'],['bee','air','water'],['ahi','api','fire'],['fatuk','batu','stone'],['loron','hari','day'],['fulan','bulan','moon'],['fitun','bintang','star'],['tasi','laut','sea'],['foho','gunung','mountain'],['asu','anjing','dog'],['busa','kucing','cat'],['manu','ayam','chicken'],['karau','kerbau','buffalo'],['fahi','babi','pig'],['hudi','pisang','banana'],['batar','jagung','corn'],['etu','nasi','rice'],['livru','buku','book'],['osan','uang','money'],['dalan','jalan','road'],['liman','tangan','hand'],['matan','mata','eye']];
+function genKamus(r,d){
+  const len=d===1?3:4;
+  const pool=shuffle(r,TETUM);
+  const words=pool.slice(0,len);
+  const dict=pool.slice(0,10).sort((a,b)=>a[0].localeCompare(b[0]));
+  const code=col=>words.map(w=>(d===1?w[col][0]:w[col][w[col].length-1]).toUpperCase()).join('');
+  const ansId=code(1), ansEn=code(2);
+  const col=LANG==='en'?2:1;
+  return {
+    title:t('p4t'),
+    view:`<p>${t('p4v')}</p><div class="words">${words.map((w,i)=>`<span class="word"><small>${i+1}</small>${w[0]}</span>`).join('')}</div>`,
+    book:`<p>${t('p4b')}</p><div class="dict">${dict.map(w=>`<div><span>${w[0]}</span><i>${w[col]}</i></div>`).join('')}</div><p class="rule-note">${t('p4rule')(d)}</p>`,
+    input:'text',inputmode:'text',placeholder:t('p4ph')(len),
+    check:v=>v===ansEn||v===ansId,
+    hint:t('p4h'),
+    answer:LANG==='en'?ansEn:ansId, answers:[ansEn,ansId]
+  };
+}
+
+const D4=[{k:'n',o:'s',dy:-1,dx:0,m:'U'},{k:'s',o:'n',dy:1,dx:0,m:'D'},{k:'w',o:'e',dy:0,dx:-1,m:'L'},{k:'e',o:'w',dy:0,dx:1,m:'R'}];
+const DM={U:D4[0],D:D4[1],L:D4[2],R:D4[3]};
+const ARROW={U:'↑',D:'↓',L:'←',R:'→'};
+function genLabirin(r,d){
+  const N=d===1?4:5;
+  const W=[];for(let y=0;y<N;y++){W.push([]);for(let x=0;x<N;x++)W[y].push({n:true,s:true,w:true,e:true})}
+  const seen=W.map(row=>row.map(()=>false));
+  const st=[[ri(r,N),ri(r,N)]];seen[st[0][0]][st[0][1]]=true;
+  while(st.length){
+    const [y,x]=st[st.length-1];
+    const nb=D4.filter(dd=>{const ny=y+dd.dy,nx=x+dd.dx;return ny>=0&&ny<N&&nx>=0&&nx<N&&!seen[ny][nx]});
+    if(!nb.length){st.pop();continue}
+    const dd=pick(r,nb),ny=y+dd.dy,nx=x+dd.dx;
+    W[y][x][dd.k]=false;W[ny][nx][dd.o]=false;seen[ny][nx]=true;st.push([ny,nx]);
+  }
+  const S=[ri(r,N),ri(r,N)];
+  const dist=W.map(row=>row.map(()=>-1));dist[S[0]][S[1]]=0;
+  const q=[S];let E=S;
+  while(q.length){const [y,x]=q.shift();if(dist[y][x]>dist[E[0]][E[1]])E=[y,x];
+    D4.forEach(dd=>{if(W[y][x][dd.k])return;const ny=y+dd.dy,nx=x+dd.dx;if(dist[ny][nx]<0){dist[ny][nx]=dist[y][x]+1;q.push([ny,nx])}})}
+  const name=p=>COLS[p[1]]+(p[0]+1);
+  function svg(showWalls,marks){
+    const C=56,P=26,size=N*C+P+4;
+    let s=`<svg class="maze" viewBox="0 0 ${size} ${size}" width="${size}" role="img" aria-label="${showWalls?t('mazeWalls'):t('mazePos')}">`;
+    for(let x=0;x<N;x++)s+=`<text x="${P+x*C+C/2}" y="16" text-anchor="middle">${COLS[x]}</text>`;
+    for(let y=0;y<N;y++)s+=`<text x="11" y="${P+y*C+C/2+5}" text-anchor="middle">${y+1}</text>`;
+    for(let y=0;y<N;y++)for(let x=0;x<N;x++)s+=`<rect x="${P+x*C+2}" y="${P+y*C+2}" width="${C-4}" height="${C-4}" rx="3" style="fill:var(--plate-2)"/>`;
+    const ln=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:var(--fg);stroke-width:4;stroke-linecap:round"/>`;
+    if(showWalls){
+      for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+        const X=P+x*C,Y=P+y*C;
+        if(W[y][x].n)s+=ln(X,Y,X+C,Y);
+        if(W[y][x].w)s+=ln(X,Y,X,Y+C);
+        if(y===N-1&&W[y][x].s)s+=ln(X,Y+C,X+C,Y+C);
+        if(x===N-1&&W[y][x].e)s+=ln(X+C,Y,X+C,Y+C);
+      }
+    }else{
+      s+=`<rect x="${P}" y="${P}" width="${N*C}" height="${N*C}" style="fill:none;stroke:var(--fg);stroke-width:4"/>`;
+    }
+    if(marks){
+      const cx=p=>P+p[1]*C+C/2, cy=p=>P+p[0]*C+C/2;
+      s+=`<circle cx="${cx(S)}" cy="${cy(S)}" r="17" style="fill:var(--brass)"/><text x="${cx(S)}" y="${cy(S)+4}" text-anchor="middle" style="fill:var(--brass-ink);font-size:10px;font-weight:700">${t('start')}</text>`;
+      s+=`<g transform="translate(${cx(E)-16} ${cy(E)-16}) scale(1.33)" style="fill:var(--green)">${SHAPES[4].svg}</g>`;
+    }
+    return s+'</svg>';
+  }
+  return {
+    title:t('p5t'),
+    view:`<p>${t('p5v')}</p><div class="svgbox">${svg(false,true)}</div>`,
+    book:`<p>${t('p5b')}</p><div class="svgbox">${svg(true,false)}</div>`,
+    input:'moves',
+    check:moves=>{
+      let [y,x]=S;
+      for(let i=0;i<moves.length;i++){const dd=DM[moves[i]];if(W[y][x][dd.k])return {ok:false,key:'wall',args:[i+1,ARROW[moves[i]]]};y+=dd.dy;x+=dd.dx}
+      if(y===E[0]&&x===E[1])return {ok:true};
+      return {ok:false,key:'short'};
+    },
+    hint:t('p5h'),
+    answer:name(S)+'→'+name(E)
+  };
+}
+
+const GEN=[genSandi,genKabel,genKoord,genKamus,genLabirin];
+function puzzleFor(code,level){
+  const r=mulberry32(seedOf('duakunci|'+code+'|'+level));
+  const d=level<5?1:2;
+  const p=GEN[level%5](r,d);
+  p.viewer=level%2===0?'merah':'biru';
+  p.d=d;
+  return p;
+}
+
+/* ---------- state ---------- */
+const fresh=()=>({code:'',role:'merah',mode:'dua',level:0,start:0,end:0,mistakes:0,hints:0,solved:false,hintShown:false,moves:[],view:'merah',curtain:false,fbKey:'',fbArgs:null,fbKind:'',finished:false});
+let S=fresh(), P=null, draftCode='', draftRole='merah', draftMode='dua';
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(v&&v.code)return Object.assign(fresh(),v)}catch(e){}return null}
+const other=k=>k==='merah'?'biru':'merah';
+const keyName=k=>k==='merah'?t('red'):t('blue');
+const keyCss=k=>k==='merah'?'var(--red)':'var(--blue)';
+const fmt=s=>{s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const norm=v=>String(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
+function current(){return ['setup','game','end'].find(id=>!$('#'+id).hidden)}
+function show(id){['setup','game','end'].forEach(s=>$('#'+s).hidden=s!==id);window.scrollTo(0,0)}
+function fbText(){if(!S.fbKey)return '';const v=t(S.fbKey);return typeof v==='function'?v(...(S.fbArgs||[])):v}
+
+/* ---------- language ---------- */
+function setLang(l){
+  LANG=l;try{localStorage.setItem(LANG_KEY,l)}catch(e){}
+  document.documentElement.lang=l;
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)));
+  $('#langLbl').textContent=t('langLbl');
+  $('#lRoom').textContent=t('gRoom');$('#lLevel').textContent=t('gLevel');$('#lTime').textContent=t('gTime');$('#lMiss').textContent=t('gMiss');
+  $('#lTools').textContent=t('tools');$('#lGoto').textContent=t('goto');$('#lGotoNote').textContent=t('gotoNote');
+  $('#swapRole').textContent=t('swap');$('#quit').textContent=t('quit');
+  [...$('#lvlSel').options].forEach((o,i)=>o.textContent=t('vaultN')(i+1));
+  const cur=current();
+  if(cur==='setup'){const ci=$('#codeIn');if(ci)draftCode=ci.value;renderSetup()}
+  else if(cur==='game'){P=puzzleFor(S.code,S.level);renderGame()}
+  else if(cur==='end')renderEnd();
+}
+document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+
+/* ---------- setup screen ---------- */
+function renderSetup(){
+  const old=load();
+  const resume=old&&!old.finished?`<section class="plate"><div class="row" style="justify-content:space-between"><div><span class="eyebrow">${t('saved')}</span><h2 style="font-size:24px">${t('room')} ${old.code} · ${t('vault')} ${old.level+1} ${t('of')} ${LEVELS}</h2><p class="note">${keyName(old.role)} · ${old.mode==='dua'?t('twoDev'):t('oneDev')}</p></div><button class="btn" type="button" id="resumeBtn">${t('resume')}</button></div></section>`:'';
+  $('#setup').innerHTML=`
+  <section class="hero">
+    <div class="locks" aria-hidden="true">${padlock('var(--red)',false,64)}${padlock('var(--blue)',true,64)}</div>
+    <div>
+      <span class="eyebrow">${t('eyebrow')}</span>
+      <h1>Dua <span>Kunci</span></h1>
+      ${LANG==='en'?`<p style="margin-top:4px;font-family:var(--f-display);font-size:22px;color:var(--fg);letter-spacing:.06em;text-transform:uppercase">${t('tagline')}</p>`:''}
+      <p>${t('heroP')}</p>
+    </div>
+  </section>
+  ${resume}
+  <form class="plate" id="setupForm">
+    <h2>${t('setupH')}</h2>
+    <div class="field">
+      <label for="codeIn">${t('codeL')}</label>
+      <div class="inrow">
+        <input id="codeIn" class="code-in" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" required value="${draftCode}">
+        <button type="button" class="btn ghost small" id="rollCode">${t('roll')}</button>
+      </div>
+      <p class="note">${t('codeNote')}</p>
+    </div>
+    <fieldset class="field" style="border:0;padding:0;margin:0">
+      <legend class="legend">${t('yourKey')}</legend>
+      <div class="choices" style="margin-top:6px">
+        <label class="choice"><input type="radio" name="role" value="merah" id="roleM" ${draftRole==='merah'?'checked':''}><span class="dot" style="background:var(--red)"></span><span><b>${t('red')}</b><small>${t('redSub')}</small></span></label>
+        <label class="choice"><input type="radio" name="role" value="biru" id="roleB" ${draftRole==='biru'?'checked':''}><span class="dot" style="background:var(--blue)"></span><span><b>${t('blue')}</b><small>${t('blueSub')}</small></span></label>
+      </div>
+    </fieldset>
+    <fieldset class="field" style="border:0;padding:0;margin:0">
+      <legend class="legend">${t('howL')}</legend>
+      <div class="choices" style="margin-top:6px">
+        <label class="choice"><input type="radio" name="mode" value="dua" id="mode2" ${draftMode==='dua'?'checked':''}><span><b>${t('twoDev')}</b><small>${t('twoSub')}</small></span></label>
+        <label class="choice"><input type="radio" name="mode" value="satu" id="mode1" ${draftMode==='satu'?'checked':''}><span><b>${t('oneDev')}</b><small>${t('oneSub')}</small></span></label>
+      </div>
+    </fieldset>
+    <p class="note">${t('langNote')}</p>
+    <div class="row"><button class="btn" type="submit">${t('enter')}</button></div>
+  </form>
+  <section class="plate">
+    <div><span class="eyebrow">${t('whatEy')}</span><h2>${t('whatH')}</h2></div>
+    <p class="muted">${t('whatP')}</p>
+    <div class="vaults">${t('vaults').map(v=>`<div class="vault"><h3>${v[0]}</h3><p>${v[1]}</p><div class="split"><span>${t('see')}</span><span>${v[2]}</span><span>${t('guide')}</span><span>${v[3]}</span></div></div>`).join('')}</div>
+    <ul class="feat">${t('feats').map(f=>`<li><b>${f[0]}</b> ${f[1]}</li>`).join('')}</ul>
+  </section>`;
+  $('#rollCode').onclick=()=>{$('#codeIn').value=draftCode=randCode()};
+  $('#codeIn').oninput=e=>draftCode=e.target.value;
+  document.querySelectorAll('input[name=role]').forEach(i=>i.onchange=()=>draftRole=i.value);
+  document.querySelectorAll('input[name=mode]').forEach(i=>i.onchange=()=>draftMode=i.value);
+  const rb=$('#resumeBtn');if(rb)rb.onclick=()=>{S=old;enterLevel(false);show('game');renderGame()};
+  $('#setupForm').onsubmit=e=>{
+    e.preventDefault();
+    const code=$('#codeIn').value.replace(/\D/g,'');
+    if(code.length!==4){$('#codeIn').focus();return}
+    S=fresh();S.code=code;S.role=draftRole;S.mode=draftMode;S.start=Date.now();
+    enterLevel(true);show('game');renderGame();
+  };
+}
+const randCode=()=>String(1000+Math.floor(Math.random()*9000));
+
+/* ---------- game ---------- */
+function enterLevel(reset){
+  P=puzzleFor(S.code,S.level);
+  if(reset){S.solved=false;S.hintShown=false;S.moves=[];S.fbKey='';S.fbArgs=null;S.fbKind='';S.view=P.viewer;S.curtain=S.mode==='satu'}
+  save();
+}
+const sel=$('#lvlSel');
+for(let i=0;i<LEVELS;i++){const o=document.createElement('option');o.value=i;sel.appendChild(o)}
+sel.addEventListener('change',()=>{S.level=+sel.value;enterLevel(true);renderGame();$('#tools').open=false});
+$('#swapRole').addEventListener('click',()=>{S.role=other(S.role);S.view=S.role;save();renderGame()});
+$('#quit').addEventListener('click',()=>{save();draftCode=randCode();renderSetup();show('setup')});
+
+function renderGame(){
+  const role=S.mode==='satu'?S.view:S.role;
+  const isViewer=role===P.viewer;
+  $('#gRoom').textContent=S.code;
+  $('#gLevel').textContent=(S.level+1)+'/'+LEVELS;
+  $('#gMiss').textContent=S.mistakes;
+  sel.value=S.level;
+  $('#swapRole').hidden=S.mode==='satu';
+  $('#progress').innerHTML=Array.from({length:LEVELS},(_,i)=>`<i class="${i<S.level||(i===S.level&&S.solved)?'done':i===S.level?'now':''}"></i>`).join('');
+  tick();
+  const plate=$('#plate');
+  if(S.mode==='satu'&&S.curtain){
+    plate.innerHTML=`<div class="curtain">
+      <span class="eyebrow">${t('vaultN')(S.level+1)} · ${P.title}</span>
+      ${padlock(keyCss(S.view),false,48)}
+      <h2>${t('turn')(keyName(S.view))}</h2>
+      <p>${t('handTxt')(keyName(S.view))}</p>
+      <button class="btn" type="button" id="reveal">${t('reveal')(keyName(S.view))}</button></div>`;
+    $('#reveal').onclick=()=>{S.curtain=false;save();renderGame()};
+  }else{
+    plate.innerHTML=`<div><span class="eyebrow">${t('vaultN')(S.level+1)} ${t('of')} ${LEVELS} · ${P.d===1?t('easy'):t('hard')}</span><h2>${P.title}</h2></div>
+      <div class="role k-${role}"><div>${padlock(keyCss(role),S.solved,30)}</div><p><b class="k">${keyName(role)}</b> · ${isViewer?t('watcher'):t('guideR')}</p></div>
+      ${isViewer?P.view:P.book}
+      ${S.mode==='satu'?`<div class="row"><button class="btn ghost small" type="button" id="handover">${t('handover')(keyName(other(S.view)))}</button></div>`:''}`;
+    const h=$('#handover');if(h)h.onclick=()=>{S.view=other(S.view);S.curtain=true;save();renderGame()};
+  }
+  renderLock();
+}
+
+function renderLock(){
+  const k=S.mode==='satu'?null:S.role;
+  const lock=$('#lock');
+  lock.className='lock '+(k?'k-'+k:'');
+  if(!k)lock.style.setProperty('--key','var(--brass)');else lock.style.removeProperty('--key');
+  const color=k?keyCss(k):'var(--brass)';
+  const label=k?t('yourLock')(keyName(k)):t('sharedLock');
+  const instr=S.solved?(k?t('instrSolved2'):t('instrSolved1')):(k?t('instr2'):t('instr1'));
+  const dis=S.solved?'disabled':'';
+  let body;
+  if(P.input==='moves'){
+    body=`<div class="seqbox" aria-live="polite">${S.moves.length?S.moves.map(m=>`<span>${ARROW[m]}</span>`).join(''):`<em>${t('noMoves')}</em>`}</div>
+    <div class="pad">
+      <button type="button" data-m="U" ${dis}>↑ ${t('up')}</button>
+      <button type="button" data-m="D" ${dis}>↓ ${t('down')}</button>
+      <button type="button" data-m="L" ${dis}>← ${t('left')}</button>
+      <button type="button" data-m="R" ${dis}>→ ${t('right')}</button>
+      <button type="button" data-act="undo" ${dis}>${t('undo')}</button>
+      <button type="button" data-act="clear" ${dis}>${t('reset')}</button>
+    </div>
+    <div class="row"><button type="button" class="btn" data-act="go" ${dis}>${t('unlock')}</button></div>`;
+  }else{
+    body=`<form class="ans" id="ansForm"><input id="ans" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="${P.inputmode}" placeholder="${P.placeholder}" aria-label="${t('answerAria')}" ${dis}><button class="btn" ${dis}>${t('unlock')}</button></form>`;
+  }
+  const last=S.level===LEVELS-1;
+  lock.innerHTML=`<div class="lock-head">${padlock(color,S.solved,52)}<div><span class="eyebrow">${label}</span><h3>${S.solved?t('open'):t('locked')}</h3><p class="note">${instr}</p></div></div>
+    ${body}
+    <p class="fb ${S.fbKind}" role="status">${fbText()}</p>
+    ${S.hintShown?`<p class="hint"><b>${t('hintL')}</b> ${P.hint}</p>`:''}
+    <div class="row">
+      ${!S.hintShown&&!S.solved?`<button type="button" class="btn ghost small" data-act="hint">${t('hintBtn')}</button>`:''}
+      ${S.solved?`<button type="button" class="btn" data-act="next">${last?t('results'):t('nextBtn')(S.level+2)}</button>`:''}
+    </div>`;
+  const f=$('#ansForm');
+  if(f)f.addEventListener('submit',e=>{e.preventDefault();const v=norm($('#ans').value);if(!v)return;judge(P.check(v)?{ok:true}:{ok:false,key:'wrong'})});
+}
+
+function judge(res){
+  if(res.ok){
+    S.solved=true;S.fbKey=S.mode==='dua'?'ok2':'ok1';S.fbArgs=null;S.fbKind='ok';
+    save();renderGame();
+  }else{
+    S.mistakes++;S.fbKey=res.key;S.fbArgs=res.args||null;S.fbKind='bad';save();renderGame();
+    const l=$('#lock');l.classList.remove('shake');void l.offsetWidth;l.classList.add('shake');
+  }
+}
+function judgeMoves(){const r=P.check(S.moves);judge(r.ok?{ok:true}:r)}
+
+$('#lock').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.dataset.m){S.moves.push(b.dataset.m);S.fbKey='';save();renderLock();return}
+  const a=b.dataset.act;
+  if(a==='undo'){S.moves.pop();save();renderLock()}
+  else if(a==='clear'){S.moves=[];save();renderLock()}
+  else if(a==='go'){if(S.moves.length)judgeMoves()}
+  else if(a==='hint'){S.hintShown=true;S.hints++;save();renderLock()}
+  else if(a==='next'){
+    if(S.level===LEVELS-1){S.finished=true;S.end=Date.now();save();renderEnd();return}
+    S.level++;enterLevel(true);renderGame();
+  }
+});
+document.addEventListener('keydown',e=>{
+  if($('#game').hidden||!P||P.input!=='moves'||S.solved||S.curtain)return;
+  if(e.target.matches('input,select,textarea'))return;
+  const m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R'}[e.key];
+  if(m){e.preventDefault();S.moves.push(m);S.fbKey='';save();renderLock()}
+  else if(e.key==='Backspace'){e.preventDefault();S.moves.pop();save();renderLock()}
+  else if(e.key==='Enter'&&S.moves.length){judgeMoves()}
+});
+
+function elapsed(){return ((S.finished?S.end:Date.now())-S.start)/1000}
+function tick(){if(!$('#game').hidden&&S.start)$('#gTime').textContent=fmt(elapsed()+S.hints*30)}
+setInterval(tick,1000);
+
+function renderEnd(){
+  const raw=elapsed(), total=raw+S.hints*30+S.mistakes*15;
+  const rank=t('ranks')[total<480?0:total<900?1:2];
+  $('#endPlate').innerHTML=`<div class="row">${padlock('var(--red)',true,56)}${padlock('var(--blue)',true,56)}</div>
+    <div><span class="eyebrow">${t('endEy')(S.code)}</span><p class="rank" style="margin-top:6px">${rank[0]}</p><p class="muted" style="margin-top:8px">${rank[1]}</p></div>
+    <div class="stats">
+      <div class="stat"><span>${t('sPlay')}</span><b>${fmt(raw)}</b></div>
+      <div class="stat"><span>${t('sMiss')}</span><b>${S.mistakes} <small style="font-size:13px;color:var(--muted)">+${S.mistakes*15}s</small></b></div>
+      <div class="stat"><span>${t('sHint')}</span><b>${S.hints} <small style="font-size:13px;color:var(--muted)">+${S.hints*30}s</small></b></div>
+      <div class="stat"><span>${t('sScore')}</span><b>${fmt(total)}</b></div>
+    </div>
+    <p class="note">${t('rankNote')}</p>
+    <div class="row"><button class="btn" type="button" id="again">${t('again')}</button></div>`;
+  $('#again').onclick=()=>{draftCode=randCode();renderSetup();show('setup')};
+  show('end');
+}
+
+/* ---------- boot ---------- */
+draftCode=randCode();
+show('setup');
+setLang(LANG);
+window.__duaKunci={puzzleFor,setLang:l=>setLang(l)};
+})();
+</script>
+
+</body>
+</html>
