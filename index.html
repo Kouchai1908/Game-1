@@ -86,7 +86,9 @@ button,input,select{font:inherit;color:inherit}
 .g{background:var(--plate);border:1px solid var(--line);border-radius:4px;padding:4px 10px;display:flex;flex-direction:column;min-width:64px}
 .g span{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .g b{font-family:var(--f-mono);font-size:17px;font-variant-numeric:tabular-nums}
-.progress{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.progress{display:grid;grid-template-columns:repeat(20,1fr);gap:3px}
+.progress i:nth-child(5n):not(:last-child){margin-right:6px}
+.progress i.skip{opacity:.35}
 .progress i{height:6px;border-radius:2px;background:var(--line)}
 .progress i.done{background:var(--brass)}
 .progress i.now{background:var(--fg)}
@@ -128,6 +130,7 @@ button,input,select{font:inherit;color:inherit}
 .ans{display:flex;gap:8px;flex-wrap:wrap}
 .ans input{flex:1 1 180px;min-width:0;font-family:var(--f-mono);font-size:24px;letter-spacing:.18em;text-transform:uppercase;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 12px}
 .ans input:disabled{opacity:.6}
+.ans input::placeholder{letter-spacing:.03em;font-size:17px;text-transform:none}
 .fb{min-height:1.5em;font-weight:500}
 .fb.ok{color:var(--ok)} .fb.bad{color:var(--bad)}
 .hint{background:var(--plate-2);border-left:3px solid var(--brass);padding:10px 12px;font-size:14.5px;border-radius:0 4px 4px 0}
@@ -164,6 +167,7 @@ select{background:var(--bg);border:1px solid var(--line);border-radius:4px;paddi
 .lang{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--plate)}
 .lang button{appearance:none;border:0;background:transparent;padding:6px 12px;cursor:pointer;font-family:var(--f-mono);font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
 .lang button[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink)}
+.tier-dots{display:inline-flex;gap:3px;margin-right:8px;vertical-align:middle}.tier-dots i{width:7px;height:14px;border-radius:2px;background:var(--line)}.tier-dots i.on{background:var(--brass)}
 .lang span{align-self:center;padding:0 10px;font-size:12px;color:var(--muted);border-right:1px solid var(--line)}
 </style>
 
@@ -204,8 +208,8 @@ select{background:var(--bg);border:1px solid var(--line);border-radius:4px;paddi
 <script>
 (function(){
 const $=s=>document.querySelector(s);
-const LEVELS=10, SAVE_KEY='duakunci-v1', LANG_KEY='duakunci-lang';
-const COLS='ABCDE';
+const LEVELS=20, SAVE_KEY='duakunci-v1', LANG_KEY='duakunci-lang';
+const COLS='ABCDEF';
 let LANG='en';
 try{const l=localStorage.getItem(LANG_KEY);if(l==='en'||l==='id')LANG=l}catch(e){}
 
@@ -213,7 +217,7 @@ try{const l=localStorage.getItem(LANG_KEY);if(l==='en'||l==='id')LANG=l}catch(e)
 const T={
 en:{
   langLbl:'Language',
-  eyebrow:'Co-op game · 2 players · 10 vaults',
+  eyebrow:'Co-op game · 2 players · 20 vaults · 4 levels',
   tagline:'Two Keys',
   heroP:'Every vault has two padlocks. You only see half of the clues and your partner sees the other half. Talk to each other to open both locks.',
   saved:'Saved game', room:'Room', vault:'Vault', of:'of', resume:'Continue',
@@ -225,24 +229,25 @@ en:{
   enter:'Enter the vault',
   langNote:'Both players can use different languages. The answers are the same.',
   whatEy:'Inside the game', whatH:'What you can do',
-  whatP:'In every vault one player is the <b>Watcher</b> (sees the object) and the other is the <b>Guide</b> (holds the rules). Roles swap every vault. There are five kinds of vault, each appears twice: an easy version, then a hard version with an extra rule.',
+  whatP:'In every vault one player is the <b>Watcher</b> (sees the object) and the other is the <b>Guide</b> (holds the rules). Roles swap every vault. There are five kinds of vault, and each one comes in four levels: Easy, Medium, Hard and Expert. Every level adds a bigger puzzle or an extra rule.',
   see:'SEE', guide:'GUIDE',
   vaults:[
-    ['Symbol Cipher','Turn a row of symbols into a number code.','A row of 4–5 symbols','Symbol-to-number table'],
-    ['Cut the Wire','Find the one wire that is safe to cut.','Colored wires and a serial number','Wire rulebook'],
-    ['Secret Coordinates','Find the code square on a 5×5 grid.','Grid of colored symbols','The target and its direction'],
+    ['Symbol Cipher','Turn a row of symbols into a number code.','A row of 4–6 symbols','Symbol-to-number table and extra rules'],
+    ['Cut the Wire','Find the one wire that is safe to cut.','3–6 colored wires and a serial number','Wire rulebook'],
+    ['Secret Coordinates','Find the code squares on a 5×5 grid.','Grid of colored symbols','1–3 targets and their directions'],
     ['Tetum Dictionary','Translate Tetum words to build a letter code.','Tetum words','Tetum–English dictionary'],
-    ['Dark Maze','Guide each step out of the maze.','Start point and exit','Map of the walls']],
+    ['Dark Maze','Guide each step out of the maze.','Start, exit and (Expert) a key','Map of the walls, up to 6×6']],
   feats:[
     ['Room code:','play on two phones with no account and no server.'],
     ['Two padlocks:','both players type the answer on their own device.'],
-    ['Hints:','available in every vault, costs 30 seconds.'],
-    ['Wrong guesses:','add 15 seconds to the final score.'],
+    ['4 levels:','Easy, Medium, Hard, Expert, 5 vaults each. Start from any level.'],
+    ['Hints and mistakes:','a hint adds 30 seconds, a wrong guess adds 15.'],
     ['Final rank:','from Vault Master down to Still Warming Up.'],
     ['Saved progress:','continue later, jump to a vault, or swap keys.']],
   gRoom:'Room', gLevel:'Vault', gTime:'Time', gMiss:'Mistakes',
   tools:'Room settings', goto:'Go to vault', gotoNote:'Use this if you and your partner are on different vaults.', swap:'Swap key', quit:'Back to menu',
-  vaultN:n=>'Vault '+n, easy:'Easy', hard:'Hard',
+  vaultN:n=>'Vault '+n, tiers:['Easy','Medium','Hard','Expert'], levelL:'Level',
+  startL:'Start from level', tierSub:a=>`Vaults ${a}–20`,
   watcher:'You are the <b>Watcher</b>. You can see the object but you do not have the rules. Describe what you see.',
   guideR:'You are the <b>Guide</b>. You have the rules but you cannot see the object. Ask your partner questions.',
   turn:k=>'Your turn, '+k, handTxt:k=>`Hand this device to the <b>${k}</b> player. The other player should not look at the screen.`, reveal:k=>`I am ${k}, show me`, handover:k=>'Hand over to '+k,
@@ -255,10 +260,10 @@ en:{
   hintBtn:'Get a hint (+30 s)', hintL:'Hint:', nextBtn:n=>'Next: vault '+n, results:'See results',
   ok2:'Click! Your padlock is open.', ok1:'Click! The vault is open.', wrong:'The padlock did not move. Check again with your partner.',
   wall:(i,a)=>`Step ${i} (${a}) hits a wall.`, short:'The path is safe, but it stops before the exit.',
-  endEy:c=>`Room ${c} · 10 vaults open`,
+  endEy:(c,n)=>`Room ${c} · ${n} vaults open`,
   ranks:[['Vault Master','You talk like one brain.'],['Solid Team','Your communication is smooth. Try another room code to reach Vault Master.'],['Still Warming Up','Every vault is open. Play again with a new code to beat your time.']],
-  sPlay:'Play time', sMiss:'Wrong guesses', sHint:'Hints', sScore:'Score time',
-  rankNote:'Rank: under 8 minutes is Vault Master, under 15 minutes is Solid Team. Compare your score time with your partner. It can differ a little because each device keeps its own clock.',
+  sPlay:'Play time', sMiss:'Wrong guesses', sHint:'Hints', sScore:'Score time', sAvg:'Per vault',
+  rankNote:'Rank uses the average score time per vault: under 50 seconds is Vault Master, under 90 seconds is Solid Team. Compare your score time with your partner. It can differ a little because each device keeps its own clock.',
   again:'Play again with a new code',
   /* puzzles */
   shapes:['Circle','Square','Triangle','Diamond','Star','Plus','Crescent moon','Heart','Hexagon','Lightning'],
@@ -268,9 +273,9 @@ en:{
   p1t:'Symbol Cipher',
   p1v:'Read these symbols to your partner, from left to right.',
   p1b:'Your partner sees a row of symbols. Match each symbol to its number.',
-  p1rule:'<b>Extra rule for this vault:</b> type the code backwards, from the rightmost symbol to the leftmost.',
+  p1rule:d=>'<b>Extra rule for this vault:</b> '+['','type the code backwards, from the rightmost symbol to the leftmost.','add 1 to every digit (9 becomes 0).','add 1 to every digit (9 becomes 0), then type the code backwards.'][d-1],
   p1ph:n=>n+' digits',
-  p1h:'The Watcher names the symbols one by one, for example "star, lightning, heart". The Guide reads out the numbers.', p1h2:' Remember: the code is reversed.',
+  p1h:'The Watcher names the symbols one by one, for example "star, lightning, heart". The Guide reads out the numbers.', p1h2:' Do not forget the extra rule in the guide.',
   p2t:'Cut the Wire',
   p2v:'Describe these wires: how many there are, the color of each wire from the top, and the serial number.',
   serial:'SERIAL NO.',
@@ -279,6 +284,7 @@ en:{
   r3:['No red wire: cut wire 2.','Last wire is white: cut the last wire.','More than one blue wire: cut the last blue wire.','Otherwise: cut the last wire.'],
   r4:['More than one red wire <b>and</b> the last digit of the serial number is odd: cut the last red wire.','Last wire is yellow <b>and</b> there is no red wire: cut wire 1.','Exactly one blue wire: cut wire 1.','More than one yellow wire: cut wire 4.','Otherwise: cut wire 2.'],
   r5:['Last wire is black <b>and</b> the last digit of the serial number is odd: cut wire 4.','Exactly one red wire <b>and</b> more than one yellow wire: cut wire 1.','No black wire: cut wire 2.','Otherwise: cut wire 1.'],
+  r6:['No yellow wire <b>and</b> the last digit of the serial number is odd: cut wire 3.','Exactly one yellow wire <b>and</b> more than one white wire: cut wire 4.','No red wire: cut the last wire.','Otherwise: cut wire 4.'],
   p2ph:'Wire number',
   p2h:'Guide: check the rules from top to bottom and stop at the first one that is true. The serial number only matters for rules that mention "odd".',
   p3t:'Secret Coordinates',
@@ -286,25 +292,29 @@ en:{
   p3b:n=>`Ask your partner to find ${n>1?'these symbols, in order,':'this symbol'} on their grid. The code is the coordinate of the square next to it.`,
   target:'Target',
   dirs:['directly ABOVE','directly BELOW','directly LEFT of','directly RIGHT of'],
+  dirs2:['TWO squares ABOVE','TWO squares BELOW','TWO squares LEFT of','TWO squares RIGHT of'],
   p3cell:d=>`The code square is <b>${d}</b> this symbol.`,
-  p3two:'Type both coordinates in order with no space, for example B2D4.',
-  p3ph:n=>n>1?'e.g. B2D4':'e.g. C4',
+  p3two:n=>`Type all ${n} coordinates in order with no space, for example ${n>2?'B2D4E1':'B2D4'}.`,
+  p3ph:n=>n>2?'e.g. B2D4E1':n>1?'e.g. B2D4':'e.g. C4',
   p3h:'The Guide names the target shape and color. The Watcher finds it on the grid, moves one square in the given direction and reads out the coordinate.',
   p4t:'Tetum Dictionary',
   p4v:'These are words in Tetum, the language of Timor-Leste. Spell or say them to your partner, in order.',
   p4b:'Look up the meaning of each word your partner says in this dictionary.',
-  p4rule:d=>`<b>Code rule:</b> take the ${d===1?'<b>FIRST</b>':'<b>LAST</b>'} letter of the English meaning of each word, in your partner's order.`,
+  p4rule:pos=>`<b>Code rule:</b> take the <b>${['FIRST','LAST','SECOND'][pos]}</b> letter of the English meaning of each word, in your partner's order.`,
   p4ph:n=>n+' letters',
   p4h:'Spell the Tetum words letter by letter so nothing is misheard. The answer is letters, not numbers.',
   p5t:'Dark Maze',
   p5v:'You know the <b>START</b> point and the <b>exit</b> (green star), but you cannot see the walls. Tell your partner the coordinates.',
   p5b:'You hold the map of the walls, but you do not know where the start and exit are. Ask your partner for the coordinates, then find the path.',
   start:'START', mazeWalls:'Maze wall map', mazePos:'Start and exit positions',
+  p5keyV:'Expert rule: the path must pass through the <b>key</b> square before it reaches the exit. Tell your partner where the key is too.',
+  p5keyB:'Expert rule: the path must pass through the key square before the exit. Ask your partner where the key is.',
+  noKey:'You reached the exit without picking up the key.',
   p5h:'The Watcher reads out the START and EXIT coordinates. The Guide traces the path, then reads out each step (up, down, left, right).'
 },
 id:{
   langLbl:'Bahasa',
-  eyebrow:'Game kooperatif · 2 pemain · 10 brankas',
+  eyebrow:'Game kooperatif · 2 pemain · 20 brankas · 4 level',
   tagline:'Dua Kunci',
   heroP:'Setiap brankas punya dua gembok. Kamu hanya melihat separuh petunjuk, partnermu melihat separuh lainnya. Kalian harus bicara supaya kedua gembok terbuka.',
   saved:'Permainan tersimpan', room:'Ruang', vault:'Brankas', of:'dari', resume:'Lanjutkan',
@@ -316,24 +326,25 @@ id:{
   enter:'Masuk ke brankas',
   langNote:'Kedua pemain boleh memakai bahasa yang berbeda. Jawabannya tetap sama.',
   whatEy:'Isi game', whatH:'Apa saja yang bisa dilakukan',
-  whatP:'Di setiap brankas, satu pemain menjadi <b>Pengamat</b> (melihat bendanya) dan satu lagi menjadi <b>Pemegang Panduan</b> (memegang aturannya). Peran bertukar setiap brankas. Ada lima jenis brankas, masing-masing muncul dua kali: versi mudah lalu versi sulit dengan aturan tambahan.',
+  whatP:'Di setiap brankas, satu pemain menjadi <b>Pengamat</b> (melihat bendanya) dan satu lagi menjadi <b>Pemegang Panduan</b> (memegang aturannya). Peran bertukar setiap brankas. Ada lima jenis brankas, dan masing-masing punya empat level: Mudah, Sedang, Sulit, dan Ahli. Setiap level menambah teka-teki yang lebih besar atau aturan tambahan.',
   see:'LIHAT', guide:'PANDU',
   vaults:[
-    ['Sandi Simbol','Ubah deretan simbol menjadi kode angka.','Deretan 4–5 simbol','Tabel simbol ke angka'],
-    ['Potong Kabel','Tentukan satu kabel yang aman dipotong.','Kabel berwarna dan nomor seri','Buku aturan kabel'],
-    ['Koordinat Rahasia','Temukan kotak kode di grid 5×5.','Grid simbol berwarna','Target dan arahnya'],
+    ['Sandi Simbol','Ubah deretan simbol menjadi kode angka.','Deretan 4–6 simbol','Tabel simbol ke angka dan aturan tambahan'],
+    ['Potong Kabel','Tentukan satu kabel yang aman dipotong.','3–6 kabel berwarna dan nomor seri','Buku aturan kabel'],
+    ['Koordinat Rahasia','Temukan kotak-kotak kode di grid 5×5.','Grid simbol berwarna','1–3 target dan arahnya'],
     ['Kamus Tetum','Terjemahkan kata Tetum untuk menyusun kode huruf.','Kata-kata Tetum','Kamus Tetum–Indonesia'],
-    ['Labirin Gelap','Pandu langkah demi langkah keluar dari labirin.','Titik mulai dan keluar','Peta dinding']],
+    ['Labirin Gelap','Pandu langkah demi langkah keluar dari labirin.','Mulai, keluar, dan (Ahli) kunci','Peta dinding, sampai 6×6']],
   feats:[
     ['Kode ruang:','main di dua HP tanpa akun dan tanpa server.'],
     ['Dua gembok:','kedua pemain mengetik jawaban di perangkat masing-masing.'],
-    ['Petunjuk:','tersedia di setiap brankas, tambah 30 detik.'],
-    ['Salah tebak:','tambah 15 detik ke skor akhir.'],
+    ['4 level:','Mudah, Sedang, Sulit, Ahli, masing-masing 5 brankas. Bisa mulai dari level mana saja.'],
+    ['Petunjuk dan salah tebak:','petunjuk tambah 30 detik, salah tebak tambah 15 detik.'],
     ['Peringkat akhir:','dari Ahli Brankas sampai Masih Pemanasan.'],
     ['Progres tersimpan:','bisa lanjut nanti, pindah brankas, atau tukar kunci.']],
   gRoom:'Ruang', gLevel:'Brankas', gTime:'Waktu', gMiss:'Salah',
   tools:'Pengaturan ruang', goto:'Pindah ke brankas', gotoNote:'Gunakan ini kalau kamu dan partner ada di brankas yang berbeda.', swap:'Tukar kunci', quit:'Keluar ke menu',
-  vaultN:n=>'Brankas '+n, easy:'Mudah', hard:'Sulit',
+  vaultN:n=>'Brankas '+n, tiers:['Mudah','Sedang','Sulit','Ahli'], levelL:'Level',
+  startL:'Mulai dari level', tierSub:a=>`Brankas ${a}–20`,
   watcher:'Kamu <b>Pengamat</b>. Kamu melihat bendanya tapi tidak punya aturannya. Jelaskan apa yang kamu lihat.',
   guideR:'Kamu <b>Pemegang Panduan</b>. Kamu punya aturannya tapi tidak melihat bendanya. Ajukan pertanyaan ke partnermu.',
   turn:k=>'Giliran '+k, handTxt:k=>`Berikan perangkat ini ke pemegang <b>${k}</b>. Pemain lain jangan mengintip layar.`, reveal:k=>`Saya ${k}, tampilkan`, handover:k=>'Serahkan ke '+k,
@@ -346,10 +357,10 @@ id:{
   hintBtn:'Minta petunjuk (+30 dtk)', hintL:'Petunjuk:', nextBtn:n=>'Lanjut ke brankas '+n, results:'Lihat hasil',
   ok2:'Klik! Gembokmu terbuka.', ok1:'Klik! Brankas terbuka.', wrong:'Gembok tidak bergerak. Cocokkan lagi dengan partnermu.',
   wall:(i,a)=>`Langkah ke-${i} (${a}) menabrak dinding.`, short:'Jalurnya aman, tapi berhenti sebelum pintu keluar.',
-  endEy:c=>`Ruang ${c} · 10 brankas terbuka`,
+  endEy:(c,n)=>`Ruang ${c} · ${n} brankas terbuka`,
   ranks:[['Ahli Brankas','Kalian bicara seperti satu otak.'],['Tim Solid','Komunikasi kalian lancar. Coba kode ruang lain untuk mengejar Ahli Brankas.'],['Masih Pemanasan','Semua brankas terbuka. Main lagi dengan kode baru untuk memperbaiki waktu.']],
-  sPlay:'Waktu main', sMiss:'Salah tebak', sHint:'Petunjuk', sScore:'Skor waktu',
-  rankNote:'Peringkat: di bawah 8 menit Ahli Brankas, di bawah 15 menit Tim Solid. Bandingkan skor waktu dengan partner, hasilnya bisa sedikit berbeda karena dihitung di tiap perangkat.',
+  sPlay:'Waktu main', sMiss:'Salah tebak', sHint:'Petunjuk', sScore:'Skor waktu', sAvg:'Per brankas',
+  rankNote:'Peringkat memakai rata-rata skor waktu per brankas: di bawah 50 detik Ahli Brankas, di bawah 90 detik Tim Solid. Bandingkan skor waktu dengan partner, hasilnya bisa sedikit berbeda karena dihitung di tiap perangkat.',
   again:'Main lagi dengan kode baru',
   shapes:['Lingkaran','Kotak','Segitiga','Belah ketupat','Bintang','Tanda tambah','Bulan sabit','Hati','Segi enam','Petir'],
   gcol:['merah','biru','kuning','hijau'],
@@ -358,9 +369,9 @@ id:{
   p1t:'Sandi Simbol',
   p1v:'Sebutkan simbol-simbol ini ke partnermu, dari kiri ke kanan.',
   p1b:'Partnermu melihat deretan simbol. Cocokkan tiap simbol dengan angkanya.',
-  p1rule:'<b>Aturan tambahan brankas ini:</b> ketik kodenya terbalik, dari simbol paling kanan ke paling kiri.',
+  p1rule:d=>'<b>Aturan tambahan brankas ini:</b> '+['','ketik kodenya terbalik, dari simbol paling kanan ke paling kiri.','tambahkan 1 ke setiap angka (9 menjadi 0).','tambahkan 1 ke setiap angka (9 menjadi 0), lalu ketik kodenya terbalik.'][d-1],
   p1ph:n=>n+' angka',
-  p1h:'Pengamat menyebut nama simbol satu per satu, misalnya "bintang, petir, hati". Pemegang panduan membacakan angkanya.', p1h2:' Jangan lupa: kodenya dibalik.',
+  p1h:'Pengamat menyebut nama simbol satu per satu, misalnya "bintang, petir, hati". Pemegang panduan membacakan angkanya.', p1h2:' Jangan lupa aturan tambahan di panduan.',
   p2t:'Potong Kabel',
   p2v:'Jelaskan kabel-kabel ini: berapa jumlahnya, warna tiap kabel dari atas, dan nomor serinya.',
   serial:'NO. SERI',
@@ -369,6 +380,7 @@ id:{
   r3:['Tidak ada kabel merah: potong kabel 2.','Kabel terakhir putih: potong kabel terakhir.','Lebih dari satu kabel biru: potong kabel biru yang terakhir.','Selain itu: potong kabel terakhir.'],
   r4:['Lebih dari satu kabel merah <b>dan</b> digit terakhir nomor seri ganjil: potong kabel merah yang terakhir.','Kabel terakhir kuning <b>dan</b> tidak ada kabel merah: potong kabel 1.','Tepat satu kabel biru: potong kabel 1.','Lebih dari satu kabel kuning: potong kabel 4.','Selain itu: potong kabel 2.'],
   r5:['Kabel terakhir hitam <b>dan</b> digit terakhir nomor seri ganjil: potong kabel 4.','Tepat satu kabel merah <b>dan</b> lebih dari satu kabel kuning: potong kabel 1.','Tidak ada kabel hitam: potong kabel 2.','Selain itu: potong kabel 1.'],
+  r6:['Tidak ada kabel kuning <b>dan</b> digit terakhir nomor seri ganjil: potong kabel 3.','Tepat satu kabel kuning <b>dan</b> lebih dari satu kabel putih: potong kabel 4.','Tidak ada kabel merah: potong kabel terakhir.','Selain itu: potong kabel 4.'],
   p2ph:'Nomor kabel',
   p2h:'Pemegang panduan: periksa aturan dari atas ke bawah dan berhenti di aturan pertama yang benar. Nomor seri hanya penting untuk aturan yang menyebut "ganjil".',
   p3t:'Koordinat Rahasia',
@@ -376,20 +388,24 @@ id:{
   p3b:n=>`Minta partnermu mencari simbol ${n>1?'ini, sesuai urutan,':'ini'} di grid miliknya. Kodenya adalah koordinat kotak di sebelah simbol tersebut.`,
   target:'Target',
   dirs:['tepat di ATAS','tepat di BAWAH','tepat di KIRI','tepat di KANAN'],
+  dirs2:['DUA kotak di ATAS','DUA kotak di BAWAH','DUA kotak di KIRI','DUA kotak di KANAN'],
   p3cell:d=>`Kotak kodenya ada <b>${d}</b> simbol ini.`,
-  p3two:'Ketik kedua koordinat berurutan tanpa spasi, misalnya B2D4.',
-  p3ph:n=>n>1?'Mis. B2D4':'Mis. C4',
+  p3two:n=>`Ketik ${n} koordinat berurutan tanpa spasi, misalnya ${n>2?'B2D4E1':'B2D4'}.`,
+  p3ph:n=>n>2?'Mis. B2D4E1':n>1?'Mis. B2D4':'Mis. C4',
   p3h:'Pemegang panduan menyebut bentuk dan warna target. Pengamat mencarinya di grid, lalu geser satu kotak sesuai arah dan sebutkan koordinatnya.',
   p4t:'Kamus Tetum',
   p4v:'Ini kata-kata dalam Bahasa Tetum. Eja atau ucapkan ke partnermu, sesuai urutan.',
   p4b:'Cari arti kata yang disebut partnermu di kamus ini.',
-  p4rule:d=>`<b>Aturan kode:</b> ambil huruf ${d===1?'<b>PERTAMA</b>':'<b>TERAKHIR</b>'} dari arti Bahasa Indonesia tiap kata, sesuai urutan kata partnermu.`,
+  p4rule:pos=>`<b>Aturan kode:</b> ambil huruf <b>${['PERTAMA','TERAKHIR','KEDUA'][pos]}</b> dari arti Bahasa Indonesia tiap kata, sesuai urutan kata partnermu.`,
   p4ph:n=>n+' huruf',
   p4h:'Eja kata Tetum huruf demi huruf supaya tidak salah dengar. Jawabannya berupa huruf, bukan angka.',
   p5t:'Labirin Gelap',
   p5v:'Kamu tahu titik <b>MULAI</b> dan <b>pintu keluar</b> (bintang hijau), tapi tidak bisa melihat dindingnya. Beri tahu partnermu koordinatnya.',
   p5b:'Kamu memegang peta dindingnya, tapi tidak tahu di mana titik mulai dan pintu keluar. Tanyakan koordinatnya ke partner, lalu cari jalannya.',
   start:'MULAI', mazeWalls:'Peta dinding labirin', mazePos:'Posisi mulai dan keluar',
+  p5keyV:'Aturan Ahli: jalurnya harus melewati kotak <b>kunci</b> sebelum sampai di pintu keluar. Beri tahu partnermu letak kuncinya juga.',
+  p5keyB:'Aturan Ahli: jalurnya harus melewati kotak kunci sebelum pintu keluar. Tanyakan letak kunci ke partnermu.',
+  noKey:'Kalian sampai di pintu keluar tanpa mengambil kunci.',
   p5h:'Pengamat menyebut koordinat MULAI dan KELUAR. Pemegang peta menelusuri jalannya, lalu membacakan arah langkah demi langkah (atas, bawah, kiri, kanan).'
 }};
 const t=k=>T[LANG][k];
@@ -424,24 +440,24 @@ const WCOL={merah:'var(--red)',biru:'var(--blue)',kuning:'var(--yellow)',putih:'
 function genSandi(r,d){
   const digits=shuffle(r,[0,1,2,3,4,5,6,7,8,9]);
   const map=SHAPES.map((s,i)=>({s,dg:digits[i]}));
-  const len=d===1?4:5;
+  const len=[4,5,6,6][d-1];
   const seq=[];for(let i=0;i<len;i++)seq.push(ri(r,10));
-  let ans=seq.map(i=>map[i].dg).join('');
-  if(d===2)ans=ans.split('').reverse().join('');
+  let ans=seq.map(i=>d>=3?(map[i].dg+1)%10:map[i].dg).join('');
+  if(d===2||d===4)ans=ans.split('').reverse().join('');
   const rows=shuffle(r,map);
   return {
     title:t('p1t'),
     view:`<p>${t('p1v')}</p><div class="seq">${seq.map(i=>`<div class="sym">${icon(SHAPES[i],'var(--brass)',44)}</div>`).join('')}</div>`,
-    book:`<p>${t('p1b')}</p><div class="table">${rows.map(m=>`<div class="trow">${icon(m.s,'var(--fg)',24)}<span>${sName(m.s)}</span><b>${m.dg}</b></div>`).join('')}</div>${d===2?`<p class="rule-note">${t('p1rule')}</p>`:''}`,
+    book:`<p>${t('p1b')}</p><div class="table">${rows.map(m=>`<div class="trow">${icon(m.s,'var(--fg)',24)}<span>${sName(m.s)}</span><b>${m.dg}</b></div>`).join('')}</div>${d>=2?`<p class="rule-note">${t('p1rule')(d)}</p>`:''}`,
     input:'text',inputmode:'numeric',placeholder:t('p1ph')(len),
     check:v=>v===ans,
-    hint:t('p1h')+(d===2?t('p1h2'):''),
+    hint:t('p1h')+(d>=2?t('p1h2'):''),
     answer:ans
   };
 }
 
 function genKabel(r,d){
-  const n=d===1?3+ri(r,2):4+ri(r,2);
+  const n=d+2;
   const names=Object.keys(WCOL);
   const w=[];for(let i=0;i<n;i++)w.push(pick(r,names));
   const serial='TL-'+(1000+ri(r,9000));
@@ -453,8 +469,10 @@ function genKabel(r,d){
     if(cnt('merah')===0)ans=2; else if(w[2]==='putih')ans=3; else if(cnt('biru')>1)ans=lastOf('biru'); else ans=3;
   }else if(n===4){
     if(cnt('merah')>1&&odd)ans=lastOf('merah'); else if(w[3]==='kuning'&&cnt('merah')===0)ans=1; else if(cnt('biru')===1)ans=1; else if(cnt('kuning')>1)ans=4; else ans=2;
-  }else{
+  }else if(n===5){
     if(w[4]==='hitam'&&odd)ans=4; else if(cnt('merah')===1&&cnt('kuning')>1)ans=1; else if(cnt('hitam')===0)ans=2; else ans=1;
+  }else{
+    if(cnt('kuning')===0&&odd)ans=3; else if(cnt('kuning')===1&&cnt('putih')>1)ans=4; else if(cnt('merah')===0)ans=6; else ans=4;
   }
   const rowH=58, W=520, H=n*rowH+16;
   let s=`<svg class="maze" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${t('wires')(n)}">`;
@@ -471,7 +489,7 @@ function genKabel(r,d){
   return {
     title:t('p2t'),
     view:`<p>${t('p2v')}</p><div class="svgbox">${s}</div><span class="serial">${t('serial')} ${serial}</span>`,
-    book:`<p>${t('p2b')}</p><div class="rules"><div><h4>${t('wires')(3)}</h4>${ol(t('r3'))}</div><div><h4>${t('wires')(4)}</h4>${ol(t('r4'))}</div><div><h4>${t('wires')(5)}</h4>${ol(t('r5'))}</div></div>`,
+    book:`<p>${t('p2b')}</p><div class="rules"><div><h4>${t('wires')(3)}</h4>${ol(t('r3'))}</div><div><h4>${t('wires')(4)}</h4>${ol(t('r4'))}</div><div><h4>${t('wires')(5)}</h4>${ol(t('r5'))}</div><div><h4>${t('wires')(6)}</h4>${ol(t('r6'))}</div></div>`,
     input:'text',inputmode:'numeric',placeholder:t('p2ph'),
     check:v=>v===String(ans),
     hint:t('p2h'),
@@ -482,27 +500,27 @@ function genKabel(r,d){
 const DIRS=[{i:0,dy:-1,dx:0},{i:1,dy:1,dx:0},{i:2,dy:0,dx:-1},{i:3,dy:0,dx:1}];
 function genKoord(r,d){
   const sh=[0,1,2,3,4,7].map(i=>SHAPES[i]);
-  const need=d===1?1:2;
-  for(let tries=0;tries<100;tries++){
+  const need=[1,2,3,3][d-1], step=d===4?2:1;
+  for(let tries=0;tries<200;tries++){
     const g=[];for(let y=0;y<5;y++){const row=[];for(let x=0;x<5;x++)row.push({s:pick(r,sh),c:pick(r,GCOL)});g.push(row)}
     const key=c=>c.s.id+'/'+c.c.i, count={};
     g.flat().forEach(c=>count[key(c)]=(count[key(c)]||0)+1);
     const cands=[];
     for(let y=0;y<5;y++)for(let x=0;x<5;x++){
       if(count[key(g[y][x])]!==1)continue;
-      DIRS.forEach(dir=>{const ny=y+dir.dy,nx=x+dir.dx;if(ny>=0&&ny<5&&nx>=0&&nx<5)cands.push({y,x,dir})});
+      DIRS.forEach(dir=>{const ny=y+dir.dy*step,nx=x+dir.dx*step;if(ny>=0&&ny<5&&nx>=0&&nx<5)cands.push({y,x,dir})});
     }
     const chosen=[];
     for(const c of shuffle(r,cands)){if(chosen.length===need)break;if(chosen.some(o=>o.y===c.y&&o.x===c.x))continue;chosen.push(c)}
     if(chosen.length<need)continue;
-    const ans=chosen.map(c=>COLS[c.x+c.dir.dx]+(c.y+c.dir.dy+1)).join('');
-    let grid='<div class="kgrid"><span></span>'+[...COLS].map(c=>`<span class="lab">${c}</span>`).join('');
+    const ans=chosen.map(c=>COLS[c.x+c.dir.dx*step]+(c.y+c.dir.dy*step+1)).join('');
+    let grid='<div class="kgrid"><span></span>'+[...COLS.slice(0,5)].map(c=>`<span class="lab">${c}</span>`).join('');
     g.forEach((row,y)=>{grid+=`<span class="lab">${y+1}</span>`+row.map(c=>`<div class="kc">${icon(c.s,c.c.css,28)}</div>`).join('')});
     grid+='</div>';
     return {
       title:t('p3t'),
       view:`<p>${t('p3v')}</p>${grid}`,
-      book:`<p>${t('p3b')(need)}</p>${chosen.map((c,i)=>{const cell=g[c.y][c.x];return `<div class="target">${icon(cell.s,cell.c.css,44)}<div>${need>1?`<span class="eyebrow">${t('target')} ${i+1}</span><br>`:''}<b>${t('shapeColor')(sName(cell.s),t('gcol')[cell.c.i])}</b><br>${t('p3cell')(t('dirs')[c.dir.i])}</div></div>`}).join('')}${need>1?`<p class="note">${t('p3two')}</p>`:''}`,
+      book:`<p>${t('p3b')(need)}</p>${chosen.map((c,i)=>{const cell=g[c.y][c.x];return `<div class="target">${icon(cell.s,cell.c.css,44)}<div>${need>1?`<span class="eyebrow">${t('target')} ${i+1}</span><br>`:''}<b>${t('shapeColor')(sName(cell.s),t('gcol')[cell.c.i])}</b><br>${t('p3cell')(t(step===2?'dirs2':'dirs')[c.dir.i])}</div></div>`}).join('')}${need>1?`<p class="note">${t('p3two')(need)}</p>`:''}`,
       input:'text',inputmode:'text',placeholder:t('p3ph')(need),
       check:v=>v===ans,
       hint:t('p3h'),
@@ -514,17 +532,18 @@ function genKoord(r,d){
 /* Tetum word, Indonesian meaning, English meaning */
 const TETUM=[['uma','rumah','house'],['bee','air','water'],['ahi','api','fire'],['fatuk','batu','stone'],['loron','hari','day'],['fulan','bulan','moon'],['fitun','bintang','star'],['tasi','laut','sea'],['foho','gunung','mountain'],['asu','anjing','dog'],['busa','kucing','cat'],['manu','ayam','chicken'],['karau','kerbau','buffalo'],['fahi','babi','pig'],['hudi','pisang','banana'],['batar','jagung','corn'],['etu','nasi','rice'],['livru','buku','book'],['osan','uang','money'],['dalan','jalan','road'],['liman','tangan','hand'],['matan','mata','eye']];
 function genKamus(r,d){
-  const len=d===1?3:4;
+  const len=[3,4,5,5][d-1], pos=[0,1,0,2][d-1];
   const pool=shuffle(r,TETUM);
   const words=pool.slice(0,len);
-  const dict=pool.slice(0,10).sort((a,b)=>a[0].localeCompare(b[0]));
-  const code=col=>words.map(w=>(d===1?w[col][0]:w[col][w[col].length-1]).toUpperCase()).join('');
+  const dict=pool.slice(0,[10,10,14,16][d-1]).sort((a,b)=>a[0].localeCompare(b[0]));
+  const letter=m=>pos===0?m[0]:pos===1?m[m.length-1]:m[1];
+  const code=col=>words.map(w=>letter(w[col]).toUpperCase()).join('');
   const ansId=code(1), ansEn=code(2);
   const col=LANG==='en'?2:1;
   return {
     title:t('p4t'),
     view:`<p>${t('p4v')}</p><div class="words">${words.map((w,i)=>`<span class="word"><small>${i+1}</small>${w[0]}</span>`).join('')}</div>`,
-    book:`<p>${t('p4b')}</p><div class="dict">${dict.map(w=>`<div><span>${w[0]}</span><i>${w[col]}</i></div>`).join('')}</div><p class="rule-note">${t('p4rule')(d)}</p>`,
+    book:`<p>${t('p4b')}</p><div class="dict">${dict.map(w=>`<div><span>${w[0]}</span><i>${w[col]}</i></div>`).join('')}</div><p class="rule-note">${t('p4rule')(pos)}</p>`,
     input:'text',inputmode:'text',placeholder:t('p4ph')(len),
     check:v=>v===ansEn||v===ansId,
     hint:t('p4h'),
@@ -536,7 +555,7 @@ const D4=[{k:'n',o:'s',dy:-1,dx:0,m:'U'},{k:'s',o:'n',dy:1,dx:0,m:'D'},{k:'w',o:
 const DM={U:D4[0],D:D4[1],L:D4[2],R:D4[3]};
 const ARROW={U:'↑',D:'↓',L:'←',R:'→'};
 function genLabirin(r,d){
-  const N=d===1?4:5;
+  const N=[4,5,6,6][d-1];
   const W=[];for(let y=0;y<N;y++){W.push([]);for(let x=0;x<N;x++)W[y].push({n:true,s:true,w:true,e:true})}
   const seen=W.map(row=>row.map(()=>false));
   const st=[[ri(r,N),ri(r,N)]];seen[st[0][0]][st[0][1]]=true;
@@ -552,6 +571,8 @@ function genLabirin(r,d){
   const q=[S];let E=S;
   while(q.length){const [y,x]=q.shift();if(dist[y][x]>dist[E[0]][E[1]])E=[y,x];
     D4.forEach(dd=>{if(W[y][x][dd.k])return;const ny=y+dd.dy,nx=x+dd.dx;if(dist[ny][nx]<0){dist[ny][nx]=dist[y][x]+1;q.push([ny,nx])}})}
+  let K=null;
+  if(d===4){do{K=[ri(r,N),ri(r,N)]}while((K[0]===S[0]&&K[1]===S[1])||(K[0]===E[0]&&K[1]===E[1]))}
   const name=p=>COLS[p[1]]+(p[0]+1);
   function svg(showWalls,marks){
     const C=56,P=26,size=N*C+P+4;
@@ -575,18 +596,19 @@ function genLabirin(r,d){
       const cx=p=>P+p[1]*C+C/2, cy=p=>P+p[0]*C+C/2;
       s+=`<circle cx="${cx(S)}" cy="${cy(S)}" r="17" style="fill:var(--brass)"/><text x="${cx(S)}" y="${cy(S)+4}" text-anchor="middle" style="fill:var(--brass-ink);font-size:10px;font-weight:700">${t('start')}</text>`;
       s+=`<g transform="translate(${cx(E)-16} ${cy(E)-16}) scale(1.33)" style="fill:var(--green)">${SHAPES[4].svg}</g>`;
+      if(K)s+=`<g transform="translate(${cx(K)} ${cy(K)})" style="fill:none;stroke:var(--brass);stroke-width:3.5;stroke-linecap:round"><circle cx="-8" cy="0" r="7"/><path d="M-1 0H15M10 0v6M15 0v5"/></g>`;
     }
     return s+'</svg>';
   }
   return {
     title:t('p5t'),
-    view:`<p>${t('p5v')}</p><div class="svgbox">${svg(false,true)}</div>`,
-    book:`<p>${t('p5b')}</p><div class="svgbox">${svg(true,false)}</div>`,
+    view:`<p>${t('p5v')}</p>${K?`<p class="rule-note">${t('p5keyV')}</p>`:''}<div class="svgbox">${svg(false,true)}</div>`,
+    book:`<p>${t('p5b')}</p>${K?`<p class="rule-note">${t('p5keyB')}</p>`:''}<div class="svgbox">${svg(true,false)}</div>`,
     input:'moves',
     check:moves=>{
-      let [y,x]=S;
-      for(let i=0;i<moves.length;i++){const dd=DM[moves[i]];if(W[y][x][dd.k])return {ok:false,key:'wall',args:[i+1,ARROW[moves[i]]]};y+=dd.dy;x+=dd.dx}
-      if(y===E[0]&&x===E[1])return {ok:true};
+      let [y,x]=S, got=!K;
+      for(let i=0;i<moves.length;i++){const dd=DM[moves[i]];if(W[y][x][dd.k])return {ok:false,key:'wall',args:[i+1,ARROW[moves[i]]]};y+=dd.dy;x+=dd.dx;if(K&&y===K[0]&&x===K[1])got=true}
+      if(y===E[0]&&x===E[1])return got?{ok:true}:{ok:false,key:'noKey'};
       return {ok:false,key:'short'};
     },
     hint:t('p5h'),
@@ -597,7 +619,7 @@ function genLabirin(r,d){
 const GEN=[genSandi,genKabel,genKoord,genKamus,genLabirin];
 function puzzleFor(code,level){
   const r=mulberry32(seedOf('duakunci|'+code+'|'+level));
-  const d=level<5?1:2;
+  const d=Math.floor(level/5)+1;
   const p=GEN[level%5](r,d);
   p.viewer=level%2===0?'merah':'biru';
   p.d=d;
@@ -605,8 +627,8 @@ function puzzleFor(code,level){
 }
 
 /* ---------- state ---------- */
-const fresh=()=>({code:'',role:'merah',mode:'dua',level:0,start:0,end:0,mistakes:0,hints:0,solved:false,hintShown:false,moves:[],view:'merah',curtain:false,fbKey:'',fbArgs:null,fbKind:'',finished:false});
-let S=fresh(), P=null, draftCode='', draftRole='merah', draftMode='dua';
+const fresh=()=>({code:'',role:'merah',mode:'dua',level:0,startLevel:0,start:0,end:0,mistakes:0,hints:0,solved:false,hintShown:false,moves:[],view:'merah',curtain:false,fbKey:'',fbArgs:null,fbKind:'',finished:false});
+let S=fresh(), P=null, draftCode='', draftRole='merah', draftMode='dua', draftTier=0;
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
 function load(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(v&&v.code)return Object.assign(fresh(),v)}catch(e){}return null}
 const other=k=>k==='merah'?'biru':'merah';
@@ -627,7 +649,7 @@ function setLang(l){
   $('#lRoom').textContent=t('gRoom');$('#lLevel').textContent=t('gLevel');$('#lTime').textContent=t('gTime');$('#lMiss').textContent=t('gMiss');
   $('#lTools').textContent=t('tools');$('#lGoto').textContent=t('goto');$('#lGotoNote').textContent=t('gotoNote');
   $('#swapRole').textContent=t('swap');$('#quit').textContent=t('quit');
-  [...$('#lvlSel').options].forEach((o,i)=>o.textContent=t('vaultN')(i+1));
+  [...$('#lvlSel').options].forEach((o,i)=>o.textContent=t('vaultN')(i+1)+' · '+t('tiers')[Math.floor(i/5)]);
   const cur=current();
   if(cur==='setup'){const ci=$('#codeIn');if(ci)draftCode=ci.value;renderSetup()}
   else if(cur==='game'){P=puzzleFor(S.code,S.level);renderGame()}
@@ -638,7 +660,7 @@ document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',
 /* ---------- setup screen ---------- */
 function renderSetup(){
   const old=load();
-  const resume=old&&!old.finished?`<section class="plate"><div class="row" style="justify-content:space-between"><div><span class="eyebrow">${t('saved')}</span><h2 style="font-size:24px">${t('room')} ${old.code} · ${t('vault')} ${old.level+1} ${t('of')} ${LEVELS}</h2><p class="note">${keyName(old.role)} · ${old.mode==='dua'?t('twoDev'):t('oneDev')}</p></div><button class="btn" type="button" id="resumeBtn">${t('resume')}</button></div></section>`:'';
+  const resume=old&&!old.finished?`<section class="plate"><div class="row" style="justify-content:space-between"><div><span class="eyebrow">${t('saved')}</span><h2 style="font-size:24px">${t('room')} ${old.code} · ${t('vault')} ${old.level+1} ${t('of')} ${LEVELS}</h2><p class="note">${t('levelL')}: ${t('tiers')[Math.floor(old.level/5)]} · ${keyName(old.role)} · ${old.mode==='dua'?t('twoDev'):t('oneDev')}</p></div><button class="btn" type="button" id="resumeBtn">${t('resume')}</button></div></section>`:'';
   $('#setup').innerHTML=`
   <section class="hero">
     <div class="locks" aria-hidden="true">${padlock('var(--red)',false,64)}${padlock('var(--blue)',true,64)}</div>
@@ -674,6 +696,12 @@ function renderSetup(){
         <label class="choice"><input type="radio" name="mode" value="satu" id="mode1" ${draftMode==='satu'?'checked':''}><span><b>${t('oneDev')}</b><small>${t('oneSub')}</small></span></label>
       </div>
     </fieldset>
+    <fieldset class="field" style="border:0;padding:0;margin:0">
+      <legend class="legend">${t('startL')}</legend>
+      <div class="choices" style="margin-top:6px">
+        ${t('tiers').map((nm,i)=>`<label class="choice"><input type="radio" name="tier" value="${i}" id="tier${i}" ${draftTier===i?'checked':''}><span class="tier-dots" aria-hidden="true">${[0,1,2,3].map(j=>`<i class="${j<=i?'on':''}"></i>`).join('')}</span><span><b>${nm}</b><small>${t('tierSub')(i*5+1)}</small></span></label>`).join('')}
+      </div>
+    </fieldset>
     <p class="note">${t('langNote')}</p>
     <div class="row"><button class="btn" type="submit">${t('enter')}</button></div>
   </form>
@@ -687,12 +715,13 @@ function renderSetup(){
   $('#codeIn').oninput=e=>draftCode=e.target.value;
   document.querySelectorAll('input[name=role]').forEach(i=>i.onchange=()=>draftRole=i.value);
   document.querySelectorAll('input[name=mode]').forEach(i=>i.onchange=()=>draftMode=i.value);
+  document.querySelectorAll('input[name=tier]').forEach(i=>i.onchange=()=>draftTier=+i.value);
   const rb=$('#resumeBtn');if(rb)rb.onclick=()=>{S=old;enterLevel(false);show('game');renderGame()};
   $('#setupForm').onsubmit=e=>{
     e.preventDefault();
     const code=$('#codeIn').value.replace(/\D/g,'');
     if(code.length!==4){$('#codeIn').focus();return}
-    S=fresh();S.code=code;S.role=draftRole;S.mode=draftMode;S.start=Date.now();
+    S=fresh();S.code=code;S.role=draftRole;S.mode=draftMode;S.start=Date.now();S.startLevel=S.level=draftTier*5;
     enterLevel(true);show('game');renderGame();
   };
 }
@@ -718,7 +747,7 @@ function renderGame(){
   $('#gMiss').textContent=S.mistakes;
   sel.value=S.level;
   $('#swapRole').hidden=S.mode==='satu';
-  $('#progress').innerHTML=Array.from({length:LEVELS},(_,i)=>`<i class="${i<S.level||(i===S.level&&S.solved)?'done':i===S.level?'now':''}"></i>`).join('');
+  $('#progress').innerHTML=Array.from({length:LEVELS},(_,i)=>`<i class="${i<S.startLevel?'skip':i<S.level||(i===S.level&&S.solved)?'done':i===S.level?'now':''}"></i>`).join('');
   tick();
   const plate=$('#plate');
   if(S.mode==='satu'&&S.curtain){
@@ -730,7 +759,7 @@ function renderGame(){
       <button class="btn" type="button" id="reveal">${t('reveal')(keyName(S.view))}</button></div>`;
     $('#reveal').onclick=()=>{S.curtain=false;save();renderGame()};
   }else{
-    plate.innerHTML=`<div><span class="eyebrow">${t('vaultN')(S.level+1)} ${t('of')} ${LEVELS} · ${P.d===1?t('easy'):t('hard')}</span><h2>${P.title}</h2></div>
+    plate.innerHTML=`<div><span class="eyebrow">${t('vaultN')(S.level+1)} ${t('of')} ${LEVELS} · ${t('levelL')} ${t('tiers')[P.d-1]}</span><h2>${P.title}</h2></div>
       <div class="role k-${role}"><div>${padlock(keyCss(role),S.solved,30)}</div><p><b class="k">${keyName(role)}</b> · ${isViewer?t('watcher'):t('guideR')}</p></div>
       ${isViewer?P.view:P.book}
       ${S.mode==='satu'?`<div class="row"><button class="btn ghost small" type="button" id="handover">${t('handover')(keyName(other(S.view)))}</button></div>`:''}`;
@@ -815,14 +844,16 @@ setInterval(tick,1000);
 
 function renderEnd(){
   const raw=elapsed(), total=raw+S.hints*30+S.mistakes*15;
-  const rank=t('ranks')[total<480?0:total<900?1:2];
+  const nV=LEVELS-(S.startLevel||0), avg=total/Math.max(1,nV);
+  const rank=t('ranks')[avg<50?0:avg<90?1:2];
   $('#endPlate').innerHTML=`<div class="row">${padlock('var(--red)',true,56)}${padlock('var(--blue)',true,56)}</div>
-    <div><span class="eyebrow">${t('endEy')(S.code)}</span><p class="rank" style="margin-top:6px">${rank[0]}</p><p class="muted" style="margin-top:8px">${rank[1]}</p></div>
+    <div><span class="eyebrow">${t('endEy')(S.code,nV)}</span><p class="rank" style="margin-top:6px">${rank[0]}</p><p class="muted" style="margin-top:8px">${rank[1]}</p></div>
     <div class="stats">
       <div class="stat"><span>${t('sPlay')}</span><b>${fmt(raw)}</b></div>
       <div class="stat"><span>${t('sMiss')}</span><b>${S.mistakes} <small style="font-size:13px;color:var(--muted)">+${S.mistakes*15}s</small></b></div>
       <div class="stat"><span>${t('sHint')}</span><b>${S.hints} <small style="font-size:13px;color:var(--muted)">+${S.hints*30}s</small></b></div>
       <div class="stat"><span>${t('sScore')}</span><b>${fmt(total)}</b></div>
+      <div class="stat"><span>${t('sAvg')}</span><b>${fmt(avg)}</b></div>
     </div>
     <p class="note">${t('rankNote')}</p>
     <div class="row"><button class="btn" type="button" id="again">${t('again')}</button></div>`;
